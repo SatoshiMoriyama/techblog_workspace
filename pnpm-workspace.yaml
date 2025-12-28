@@ -1,0 +1,3 @@
+packages:
+  - 'blog_content/*'
+  - 'experiments/*'
