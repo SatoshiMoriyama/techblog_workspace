@@ -10,7 +10,18 @@
     "editor.formatOnSave": true,
     "editor.defaultFormatter": "biomejs.biome"
   },
-  "cSpell.words": ["textlint", "techblog", "Kiro", "textlintrc", "markdownlint", "biomejs", "pids"],
+  "cSpell.words": [
+    "textlint",
+    "techblog",
+    "Kiro",
+    "textlintrc",
+    "markdownlint",
+    "biomejs",
+    "pids",
+    "Qiita",
+    "nwiizo",
+    "Blurrer"
+  ],
   "cSpell.ignorePaths": [
     "node_modules/**",
     "pnpm-lock.yaml",

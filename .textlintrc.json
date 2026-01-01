@@ -2,12 +2,13 @@
   "rules": {
     "preset-ja-technical-writing": {
       "sentence-length": {
-        "max": 100
+        "max": 90
       },
       "max-ten": {
         "max": 3
       },
-      "difficult-word": false
+      "difficult-word": false,
+      "no-exclamation-question-mark": false
     },
     "preset-japanese": {
       "sentence-length": false,
@@ -22,6 +23,10 @@
         "after": true
       }
     },
-    "spellcheck-tech-word": true
+    "spellcheck-tech-word": {
+      "allow": [
+        "Qiita"
+      ]
+    }
   }
 }

@@ -196,3 +196,11 @@ temp/
 
 # Project specific
 *.draft.md
+
+# Blog content images
+blog_content/*.png
+blog_content/*.jpg
+blog_content/*.jpeg
+blog_content/*.gif
+blog_content/*.svg
+blog_content/*.webp

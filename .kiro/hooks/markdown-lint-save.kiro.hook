@@ -12,7 +12,7 @@
   },
   "then": {
     "type": "askAgent",
-    "prompt": "保存されたMarkdownファイルに対してtextlintを実行して文章を校正してください。以下のコマンドを実行してください：\n\npnpm lint:text:fix\n\n実行後、修正された内容があれば簡潔に報告してください。"
+    "prompt": "保存されたMarkdownファイルに対してtextlintを実行して文章を校正してください。以下のコマンドを実行してください：\n\npnpm lint:fix\n\n実行後、修正された内容があれば簡潔に報告してください。"
   },
   "workspaceFolderName": "techblog_workspace",
   "shortName": "markdown-lint-save"
