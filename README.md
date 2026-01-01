@@ -1,54 +1,82 @@
 # Tech Blog Workspace
 
-技術ブログ記事の執筆・校正を行うためのワークスペースです。
+技術ブログ記事の執筆・校正するためのワークスペースです。
 
 ## 概要
 
-このプロジェクトは、技術ブログの記事を効率的に執筆し、textlintを使用して文章の品質を保つためのワークスペースです。
-
-ブログ記事評価基準として[ブログ記事評価プロンプト v2.2](https://gist.github.com/nwiizo/c75043438866100452fd249e536341d4)をKiroのSteering Fileに設定しています。
+このプロジェクトは、技術ブログの記事を効率的に執筆し、textlint を使用して文章の品質を保つためのワークスペースです。
 
 ## 構成
 
-- `blog_content/` - 公開用のブログ記事
-- `experiments/` - 検証用のコードや実験的な内容
+```
+techblog_workspace/
+├── blog_content/           # 公開用のブログ記事
+│   └── blog.md
+├── packages/               # モノレポ構成の検証用パッケージ
+│   ├── package-a/          # 個別パッケージ例
+│   └── package-b/          # 個別パッケージ例
+├── .kiro/                  # Kiro設定ファイル
+│   ├── hooks/              # エージェントフック
+│   ├── settings/           # MCP設定など
+│   └── steering/           # ステアリングファイル
+│       └── blog-evaluation.md
+├── .vscode/                # VSCode設定
+│   └── settings.json
+├── node_modules/           # 依存関係
+├── .gitignore
+├── .textlintrc.json        # textlint設定
+├── biome.json              # Biome設定（TypeScript用）
+├── package.json
+├── pnpm-lock.yaml
+├── pnpm-workspace.yaml
+└── README.md
+```
+
+## 利用パッケージ、拡張ツール
+
+### NPMパッケージ
+- @biomejs/biome - TypeScript/JavaScript のリンター・フォーマッター
+- markdownlint-cli2 - Markdown 構造チェック
+- textlint - 日本語文章校正
+  - textlint-rule-preset-ja-spacing - 日本語の文字間スペースルール
+  - textlint-rule-preset-ja-technical-writing - 技術文書向けの日本語ルール
+  - textlint-rule-preset-japanese - 日本語の基本ルール
+  - textlint-rule-prh - 表記ゆれの統一
+  - textlint-rule-spellcheck-tech-word - 技術用語のスペルチェック
+
+### VSCode拡張機能（推奨）
+- Biome - TypeScript/JavaScript のリント・フォーマット
+- Code Spell Checker - 英単語のスペルチェック
+
+### Kiro Steering File
+- [ブログ記事評価プロンプト v2.2](https://gist.github.com/nwiizo/c75043438866100452fd249e536341d4) - ブログ記事の品質評価基準
+
+### Kiro Agent Hooks
+- ファイル保存時の自動校正
+- 記事公開前の品質チェック
+- 翻訳文字列更新時の自動同期
 
 ## 機能
 
 ### 文章の校正
 
 ```bash
-# 文章をチェック
-pnpm lint:text
+# ブログ記事チェック（構造 + 文章）
+pnpm lint
 
-# 自動修正
-pnpm lint:text:fix
+# ブログ記事修正（構造 + 文章）
+pnpm lint:fix
 ```
 
-### textlintルール
+### コードの校正
 
-以下のルールが適用されています：
+```bash
+# TypeScriptコードチェック（フォーマット + リント）
+pnpm code:check
 
-- **preset-ja-technical-writing**: 技術文書向けの日本語ルール
-  - 文の長さ: 最大100文字
-  - 読点の数: 最大3個
-  - 難しい単語のチェック: 無効
-- **preset-japanese**: 日本語の基本ルール
-- **spellcheck-tech-word**: 技術用語のスペルチェック
-
-### 主なチェック項目
-
-- 助詞の重複
-- 弱い表現（「思います」など）
-- 文末の句点
-- 文の長さ
-- 技術用語のスペル
-
-## 開発環境
-
-- Node.js
-- pnpm
-- textlint
+# TypeScriptコード修正（フォーマット + リント）
+pnpm code:fix
+```
 
 ## セットアップ
 
@@ -57,13 +85,8 @@ pnpm lint:text:fix
 pnpm install
 
 # 文章チェックの実行
-pnpm lint:text
+pnpm lint
+
+# 文章の自動修正
+pnpm lint:fix
 ```
-
-### 推奨ツール
-
-このプロジェクトを効率的に使用するために、以下のツールの使用を推奨します：
-
-- **Prettier**: Markdownの自動フォーマット（Kiroの拡張機能から「Prettier」を検索してインストール）
-- **Code Spell Checker**: 英単語のスペルチェック（Kiroの拡張機能から「Code Spell Checker」を検索してインストール）
-- **textlint**: 日本語文章校正（既にプロジェクトに組み込み済み）

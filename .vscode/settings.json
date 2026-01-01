@@ -1,11 +1,16 @@
 {
-  "editor.formatOnSave": true,
-  "editor.defaultFormatter": "prettier.prettier-vscode",
   "[markdown]": {
-    "editor.formatOnSave": true,
-    "editor.defaultFormatter": "prettier.prettier-vscode"
+    "editor.formatOnSave": false
   },
-  "cSpell.words": ["textlint"],
+  "[typescript]": {
+    "editor.formatOnSave": true,
+    "editor.defaultFormatter": "biomejs.biome"
+  },
+  "[javascript]": {
+    "editor.formatOnSave": true,
+    "editor.defaultFormatter": "biomejs.biome"
+  },
+  "cSpell.words": ["textlint", "techblog", "Kiro", "textlintrc", "markdownlint", "biomejs", "pids"],
   "cSpell.ignorePaths": [
     "node_modules/**",
     "pnpm-lock.yaml",
@@ -15,6 +20,7 @@
     "dist/**",
     "build/**",
     ".vscode/**",
-    ".kiro/**"
+    ".kiro/**",
+    ".gitignore"
   ]
 }
