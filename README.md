@@ -52,9 +52,7 @@ techblog_workspace/
 - [ブログ記事評価プロンプト v2.2](https://gist.github.com/nwiizo/c75043438866100452fd249e536341d4) - ブログ記事の品質評価基準
 
 ### Kiro Agent Hooks
-- ファイル保存時の自動校正
-- 記事公開前の品質チェック
-- 翻訳文字列更新時の自動同期
+- Markdown Lint on Save - Markdownファイル編集時の自動文章校正
 
 ## 機能
 
