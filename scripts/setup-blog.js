@@ -83,6 +83,8 @@ function updateCdkPackageJson(kebabName) {
     }
     
     console.log(`✅ ${cdkPackagePath} を更新しました`);
+  } else {
+    console.log(`ℹ️ ${cdkPackagePath} が存在しないため、スキップしました`);
   }
 }
 
@@ -106,6 +108,8 @@ function updateKiroHook(workspaceName) {
     }
     
     console.log(`✅ ${hookPath} を更新しました`);
+  } else {
+    console.log(`ℹ️ ${hookPath} が存在しないため、スキップしました`);
   }
 }
 
