@@ -6,8 +6,8 @@ function main() {
   const blogName = process.argv[2];
   
   if (!blogName) {
-    console.error('使用方法: node scripts/setup-blog.js <blog-name>');
-    console.error('例: node scripts/setup-blog.js aws-lambda-tips');
+    console.error('使用方法: pnpm setup-blog <blog-name>');
+    console.error('例: pnpm setup-blog aws-lambda-tips');
     process.exit(1);
   }
 
