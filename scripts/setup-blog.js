@@ -1,7 +1,6 @@
 #!/usr/bin/env node
 
 const fs = require('fs');
-const path = require('path');
 
 function main() {
   const blogName = process.argv[2];
@@ -13,7 +12,11 @@ function main() {
   }
 
   // kebab-caseに変換
-  const kebabName = blogName.toLowerCase().replace(/[^a-z0-9-]/g, '-');
+  const kebabName = blogName
+    .toLowerCase()
+    .replace(/[^a-z0-9-]/g, '-')   // 非英数字をハイフンに
+    .replace(/-+/g, '-')           // 連続するハイフンを1つに
+    .replace(/^-+|-+$/g, '');      // 先頭・末尾のハイフンを削除
   const workspaceName = `${kebabName}-blog`;
   
   console.log(`ブログワークスペースをセットアップ中: ${workspaceName}`);
