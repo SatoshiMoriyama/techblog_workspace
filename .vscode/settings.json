@@ -11,16 +11,20 @@
     "editor.defaultFormatter": "biomejs.biome"
   },
   "cSpell.words": [
-    "textlint",
-    "techblog",
-    "Kiro",
-    "textlintrc",
-    "markdownlint",
+    "awsglue",
     "biomejs",
+    "Blurrer",
+    "dynamicframe",
+    "HMAC",
+    "Kiro",
+    "markdownlint",
+    "nwiizo",
     "pids",
     "Qiita",
-    "nwiizo",
-    "Blurrer"
+    "SWITCHBOT",
+    "techblog",
+    "textlint",
+    "textlintrc"
   ],
   "cSpell.ignorePaths": [
     "node_modules/**",
