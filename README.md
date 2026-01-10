@@ -7,7 +7,13 @@
 ### 新しいブログ記事の開始
 
 1. このフォルダ全体をコピーして新しいディレクトリを作成
-2. セットアップスクリプトを実行
+2. 依存関係をインストール
+
+```bash
+pnpm install
+```
+
+3. セットアップスクリプトを実行
 
 ```bash
 pnpm setup-blog blog-name
@@ -18,7 +24,7 @@ pnpm setup-blog blog-name
 pnpm setup-blog aws-lambda-tips
 ```
 
-3. `blog_content/blog.md` を編集してブログを書く
+4. `blog_content/blog.md` を編集してブログを書く
 
 ### 利用可能なコマンド
 

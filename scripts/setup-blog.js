@@ -54,7 +54,12 @@ function updateRootPackageJson(workspaceName, kebabName) {
   packageJson.name = workspaceName;
   packageJson.description = `${kebabName}に関する技術ブログ記事の執筆・校正とコード検証のためのワークスペース`;
   
-  fs.writeFileSync(packagePath, JSON.stringify(packageJson, null, 2) + '\n');
+  try {
+    fs.writeFileSync(packagePath, JSON.stringify(packageJson, null, 2) + '\n');
+  } catch (error) {
+    throw new Error(`${packagePath} の書き込みに失敗しました: ${error.message}`);
+  }
+  
   console.log(`✅ ${packagePath} を更新しました`);
 }
 
@@ -71,7 +76,12 @@ function updateCdkPackageJson(kebabName) {
     
     cdkPackageJson.name = `${kebabName}-cdk`;
     
-    fs.writeFileSync(cdkPackagePath, JSON.stringify(cdkPackageJson, null, 2) + '\n');
+    try {
+      fs.writeFileSync(cdkPackagePath, JSON.stringify(cdkPackageJson, null, 2) + '\n');
+    } catch (error) {
+      throw new Error(`${cdkPackagePath} の書き込みに失敗しました: ${error.message}`);
+    }
+    
     console.log(`✅ ${cdkPackagePath} を更新しました`);
   }
 }
@@ -89,7 +99,12 @@ function updateKiroHook(workspaceName) {
     
     hookJson.workspaceFolderName = workspaceName;
     
-    fs.writeFileSync(hookPath, JSON.stringify(hookJson, null, 2) + '\n');
+    try {
+      fs.writeFileSync(hookPath, JSON.stringify(hookJson, null, 2) + '\n');
+    } catch (error) {
+      throw new Error(`${hookPath} の書き込みに失敗しました: ${error.message}`);
+    }
+    
     console.log(`✅ ${hookPath} を更新しました`);
   }
 }
