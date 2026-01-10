@@ -9,7 +9,8 @@
     "code:lint": "biome check packages/",
     "code:fix": "biome check --write packages/",
     "cdk:deploy": "pnpm --filter cdk deploy",
-    "cdk:destroy": "pnpm --filter cdk destroy"
+    "cdk:destroy": "pnpm --filter cdk destroy",
+    "setup-blog": "node scripts/setup-blog.js"
   },
   "keywords": [],
   "author": "",
