@@ -6,9 +6,10 @@
   "scripts": {
     "lint": "markdownlint-cli2 blog_content/**/*.md && textlint blog_content/**/*.md",
     "lint:fix": "markdownlint-cli2 --fix blog_content/**/*.md && textlint --fix blog_content/**/*.md",
-    "code:check": "biome check packages/",
+    "code:lint": "biome check packages/",
     "code:fix": "biome check --write packages/",
-    "prepare": "husky"
+    "cdk:deploy": "pnpm --filter cdk deploy",
+    "cdk:destroy": "pnpm --filter cdk destroy"
   },
   "keywords": [],
   "author": "",
