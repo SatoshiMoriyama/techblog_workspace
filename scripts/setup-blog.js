@@ -43,7 +43,13 @@ function main() {
 
 function updateRootPackageJson(workspaceName, kebabName) {
   const packagePath = 'package.json';
-  const packageJson = JSON.parse(fs.readFileSync(packagePath, 'utf8'));
+  
+  let packageJson;
+  try {
+    packageJson = JSON.parse(fs.readFileSync(packagePath, 'utf8'));
+  } catch (error) {
+    throw new Error(`${packagePath} の読み込みに失敗しました: ${error.message}`);
+  }
   
   packageJson.name = workspaceName;
   packageJson.description = `${kebabName}に関する技術ブログ記事の執筆・校正とコード検証のためのワークスペース`;
@@ -56,7 +62,13 @@ function updateCdkPackageJson(kebabName) {
   const cdkPackagePath = 'packages/cdk/package.json';
   
   if (fs.existsSync(cdkPackagePath)) {
-    const cdkPackageJson = JSON.parse(fs.readFileSync(cdkPackagePath, 'utf8'));
+    let cdkPackageJson;
+    try {
+      cdkPackageJson = JSON.parse(fs.readFileSync(cdkPackagePath, 'utf8'));
+    } catch (error) {
+      throw new Error(`${cdkPackagePath} の読み込みに失敗しました: ${error.message}`);
+    }
+    
     cdkPackageJson.name = `${kebabName}-cdk`;
     
     fs.writeFileSync(cdkPackagePath, JSON.stringify(cdkPackageJson, null, 2) + '\n');
@@ -68,7 +80,13 @@ function updateKiroHook(workspaceName) {
   const hookPath = '.kiro/hooks/agent-completion-sound.kiro.hook';
   
   if (fs.existsSync(hookPath)) {
-    const hookJson = JSON.parse(fs.readFileSync(hookPath, 'utf8'));
+    let hookJson;
+    try {
+      hookJson = JSON.parse(fs.readFileSync(hookPath, 'utf8'));
+    } catch (error) {
+      throw new Error(`${hookPath} の読み込みに失敗しました: ${error.message}`);
+    }
+    
     hookJson.workspaceFolderName = workspaceName;
     
     fs.writeFileSync(hookPath, JSON.stringify(hookJson, null, 2) + '\n');
