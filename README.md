@@ -16,7 +16,7 @@ pnpm install
 3. セットアップスクリプトを実行
 
 ```bash
-pnpm setup-blog blog-name
+pnpm setup-blog your-blog-name
 ```
 
 例:
