@@ -10,12 +10,12 @@
 2. セットアップスクリプトを実行
 
 ```bash
-pnpm setup-blog "blog-name"
+pnpm setup-blog blog-name
 ```
 
 例:
 ```bash
-pnpm setup-blog "aws-lambda-tips"
+pnpm setup-blog aws-lambda-tips
 ```
 
 3. `blog_content/blog.md` を編集してブログを書く
