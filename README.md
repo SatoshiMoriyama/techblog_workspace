@@ -10,7 +10,7 @@
 2. セットアップスクリプトを実行
 
 ```bash
-pnpm setup-blog "記事のテーマ名"
+pnpm setup-blog "blog-name"
 ```
 
 例:
@@ -53,5 +53,5 @@ pnpm cdk:destroy
 
 - セットアップスクリプトは以下を自動更新します：
   - ルート `package.json` の name と description
-  - CDK `package.json` の name
+  - CDK プロジェクトの `packages/cdk/package.json` の name
   - Kiro Hook の workspaceFolderName
