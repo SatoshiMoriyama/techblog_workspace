@@ -8,8 +8,8 @@
     "lint:fix": "markdownlint-cli2 --fix blog_content/**/*.md && textlint --fix blog_content/**/*.md",
     "code:lint": "biome check packages/",
     "code:fix": "biome check --write packages/",
-    "cdk:deploy": "pnpm --filter cdk deploy",
-    "cdk:destroy": "pnpm --filter cdk destroy",
+    "cdk:deploy": "pnpm --filter cdk run deploy",
+    "cdk:destroy": "pnpm --filter cdk run destroy",
     "setup-blog": "node scripts/setup-blog.js"
   },
   "keywords": [],
