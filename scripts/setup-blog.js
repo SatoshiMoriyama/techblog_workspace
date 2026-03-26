@@ -25,10 +25,7 @@ function main() {
     // 1. ルートpackage.jsonを更新
     updateRootPackageJson(workspaceName, kebabName);
     
-    // 2. CDK package.jsonを更新
-    updateCdkPackageJson(kebabName);
-    
-    // 3. Kiro Hookを更新
+    // 2. Kiro Hookを更新
     updateKiroHook(workspaceName);
     
     console.log('✅ セットアップ完了!');
@@ -61,31 +58,6 @@ function updateRootPackageJson(workspaceName, kebabName) {
   }
   
   console.log(`✅ ${packagePath} を更新しました`);
-}
-
-function updateCdkPackageJson(kebabName) {
-  const cdkPackagePath = 'packages/cdk/package.json';
-  
-  if (fs.existsSync(cdkPackagePath)) {
-    let cdkPackageJson;
-    try {
-      cdkPackageJson = JSON.parse(fs.readFileSync(cdkPackagePath, 'utf8'));
-    } catch (error) {
-      throw new Error(`${cdkPackagePath} の読み込みに失敗しました: ${error.message}`);
-    }
-    
-    cdkPackageJson.name = `${kebabName}-cdk`;
-    
-    try {
-      fs.writeFileSync(cdkPackagePath, JSON.stringify(cdkPackageJson, null, 2) + '\n');
-    } catch (error) {
-      throw new Error(`${cdkPackagePath} の書き込みに失敗しました: ${error.message}`);
-    }
-    
-    console.log(`✅ ${cdkPackagePath} を更新しました`);
-  } else {
-    console.log(`ℹ️ ${cdkPackagePath} が存在しないため、スキップしました`);
-  }
 }
 
 function updateKiroHook(workspaceName) {

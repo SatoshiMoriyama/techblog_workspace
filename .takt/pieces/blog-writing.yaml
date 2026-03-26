@@ -1,0 +1,294 @@
+name: blog-writing
+description: ブログ執筆ピース（企画確認 → 執筆 → lint → レビュー → 修正 → lint → レビュー...→ 完了）
+max_movements: 20
+initial_movement: plan
+loop_monitors:
+  - cycle:
+      - reviewers
+      - fix
+      - lint
+    threshold: 3
+    judge:
+      persona: blog-editor
+      instruction: |
+        reviewers → fix → lint のループが {cycle_count} 回繰り返されました。
+
+        各サイクルのレポートを確認し、このループが健全（進捗がある）か、
+        非生産的（同じ問題を繰り返している）かを判断してください。
+
+        **判断基準:**
+        - 各サイクルで指摘が減少しているか
+        - 同じ指摘が繰り返されていないか
+        - 修正が実際に反映されているか
+      rules:
+        - condition: 健全（指摘数が減少、修正が反映されている）
+          next: reviewers
+        - condition: 非生産的（同じ指摘が繰り返される）
+          next: COMPLETE
+movements:
+  - name: plan
+    edit: false
+    persona: blog-planner
+    knowledge:
+      - writing-style
+      - blog-guidelines
+    mcp_servers:
+      aws-knowledge:
+        command: npx
+        args: ["mcp-remote", "https://knowledge-mcp.global.api.aws"]
+      context7:
+        command: npx
+        args: ["-y", "@upstash/context7-mcp@latest"]
+    provider_options:
+      claude:
+        allowed_tools:
+          - Read
+          - Glob
+          - Grep
+          - Bash
+          - WebSearch
+          - WebFetch
+          - mcp__aws-knowledge__*
+          - mcp__context7__*
+    rules:
+      - condition: 企画内容が明確で執筆可能
+        next: write
+      - condition: 企画内容が不明確、情報不足
+        next: ABORT
+        appendix: |
+          確認事項:
+          - {質問1}
+          - {質問2}
+    instruction: |
+      ユーザーから提供された企画（テーマ・構成・ターゲット読者）を確認し、
+      執筆に必要な情報が揃っているか判断してください。
+
+      **確認項目:**
+      - 記事のテーマと目的が明確か
+      - ターゲット読者が想定されているか
+      - 記事の構成（見出し案）があるか
+      - 技術的に正確な情報を書くための参考資料やURLがあるか
+      - 投稿先プラットフォーム（Qiita or はてなブログ）が指定されているか
+        - 指定がなければユーザーに確認すること（リンクの埋め込み形式が異なるため）
+
+      企画内容の分析結果をレポートにまとめてください。
+    output_contracts:
+      report:
+        - name: plan.md
+          format: plan
+
+  - name: write
+    edit: true
+    persona: blog-writer
+    session: refresh
+    knowledge:
+      - writing-style
+      - blog-guidelines
+    mcp_servers:
+      aws-knowledge:
+        command: npx
+        args: ["mcp-remote", "https://knowledge-mcp.global.api.aws"]
+      context7:
+        command: npx
+        args: ["-y", "@upstash/context7-mcp@latest"]
+    provider_options:
+      claude:
+        allowed_tools:
+          - Read
+          - Glob
+          - Grep
+          - Edit
+          - Write
+          - Bash
+          - WebSearch
+          - WebFetch
+          - mcp__aws-knowledge__*
+          - mcp__context7__*
+    required_permission_mode: edit
+    rules:
+      - condition: 執筆完了
+        next: lint
+      - condition: ユーザー入力が必要
+        next: write
+        requires_user_input: true
+        interactive_only: true
+      - condition: 執筆を進行できない
+        next: ABORT
+    instruction: |
+      プランナーが確認した企画内容をもとに、ブログ記事を執筆してください。
+      ナレッジの writing-style と blog-guidelines に従ってください。
+
+      **リンクの埋め込み形式:**
+      プランナーのレポートで確認した投稿先プラットフォームに合わせてリンクを記述すること。
+      - Qiita: URLを単独行で貼る
+      - はてなブログ: `[URL:embed:cite]` 形式で貼る
+
+      **画像について:**
+      AIは画像を作成できません。スクリーンショットや図を入れるべき箇所には、
+      以下の形式でマーカーコメントを挿入してください:
+      `<!-- TODO: screenshot - 説明文 -->`
+      例: `<!-- TODO: screenshot - AWSコンソールでLambda関数を作成した画面 -->`
+
+      **出力先:**
+      - blog_content/blog.md に記事を作成すること
+    output_contracts:
+      report:
+        - name: writing-scope.md
+          format: coder-scope
+
+  - name: lint
+    edit: true
+    persona: blog-writer
+    provider_options:
+      claude:
+        allowed_tools:
+          - Read
+          - Glob
+          - Grep
+          - Edit
+          - Write
+          - Bash
+    required_permission_mode: edit
+    instruction: |
+      blog_content/blog.md に対して markdownlint を実行し、エラーがあれば修正してください。
+
+      **手順:**
+      1. `npx markdownlint-cli blog_content/blog.md` を実行
+      2. エラーがあれば記事を修正
+      3. 再度 lint を実行してエラーが0になるまで繰り返す
+
+      **注意:**
+      - .markdownlint.json の設定に従うこと
+      - lint修正で文章の意味を変えないこと
+    rules:
+      - condition: lintエラーなし
+        next: reviewers
+      - condition: lint修正を進行できない
+        next: ABORT
+
+  - name: reviewers
+    parallel:
+      - name: tech-review
+        edit: false
+        persona: tech-reviewer
+        knowledge:
+          - blog-guidelines
+        mcp_servers:
+          aws-knowledge:
+            command: npx
+            args: ["mcp-remote", "https://knowledge-mcp.global.api.aws"]
+          context7:
+            command: npx
+            args: ["-y", "@upstash/context7-mcp@latest"]
+        provider_options:
+          claude:
+            allowed_tools:
+              - Read
+              - Glob
+              - Grep
+              - WebSearch
+              - WebFetch
+              - mcp__aws-knowledge__*
+              - mcp__context7__*
+        rules:
+          - condition: approved
+          - condition: needs_fix
+        instruction: |
+          blog_content/blog.md の技術的な正確性をレビューしてください。
+
+          **チェック項目:**
+          - 技術的な記述が正確か（コマンド、設定値、API仕様など）
+          - コード例が動作するか
+          - 手順通りに進めて再現できるか
+          - 最新バージョンの情報か（古い情報でないか）
+          - 誤解を招く技術的表現がないか
+
+          問題なければ approved、修正が必要なら needs_fix と判定してください。
+        output_contracts:
+          report:
+            - name: tech-review.md
+              format: architecture-review
+
+      - name: writing-review
+        edit: false
+        persona: blog-editor
+        knowledge:
+          - writing-style
+          - blog-guidelines
+        provider_options:
+          claude:
+            allowed_tools:
+              - Read
+              - Glob
+              - Grep
+              - WebSearch
+              - WebFetch
+        rules:
+          - condition: すべて問題なし
+          - condition: 改善が必要
+        instruction: |
+          blog_content/blog.md の文章品質と構成をレビューしてください。
+          ナレッジの writing-style と blog-guidelines を基準に評価してください。
+
+          特に以下を重点的にチェック:
+          - 既存記事との文体の一貫性
+          - 人間らしさ（AI臭さがないか）
+          - 炎上リスク
+          - 構成の適切さ
+
+          docs/blog-evaluation.md の7観点で採点してください。
+          合否判定の対象は6観点（防御力・思考整理力・実践応用性・構成と読みやすさ・コミュニケーション力・炎上リスク）です。
+          人間らしさは参考採点のみ（合否に含めない）。
+          対象6観点がすべて4.0点以上なら「すべて問題なし」、1つでも4.0未満があれば「改善が必要」と判定してください。
+          レポートには各観点のスコアと判定理由を明記すること。
+        output_contracts:
+          report:
+            - name: writing-review.md
+              format: supervisor-validation
+    rules:
+      - condition: all("approved", "すべて問題なし")
+        next: COMPLETE
+      - condition: any("needs_fix", "改善が必要")
+        next: fix
+
+  - name: fix
+    edit: true
+    persona: blog-writer
+    session: refresh
+    knowledge:
+      - writing-style
+      - blog-guidelines
+    mcp_servers:
+      aws-knowledge:
+        command: npx
+        args: ["mcp-remote", "https://knowledge-mcp.global.api.aws"]
+      context7:
+        command: npx
+        args: ["-y", "@upstash/context7-mcp@latest"]
+    provider_options:
+      claude:
+        allowed_tools:
+          - Read
+          - Glob
+          - Grep
+          - Edit
+          - Write
+          - Bash
+          - WebSearch
+          - WebFetch
+          - mcp__aws-knowledge__*
+          - mcp__context7__*
+    required_permission_mode: edit
+    instruction: |
+      レビュアーからの指摘をもとに、blog_content/blog.md を修正してください。
+
+      **修正方針:**
+      - 技術レビューの指摘は正確性を優先して修正
+      - 文章レビューの指摘はナレッジの writing-style に合わせて修正
+      - 修正内容をレポートにまとめること
+    pass_previous_response: false
+    rules:
+      - condition: 修正完了
+        next: lint
+      - condition: 判断できない、情報不足
+        next: ABORT
