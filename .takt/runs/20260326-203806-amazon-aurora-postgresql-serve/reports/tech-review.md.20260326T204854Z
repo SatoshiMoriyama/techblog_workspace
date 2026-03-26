@@ -1,0 +1,97 @@
+# Tech Review Report
+
+## 判定: approved
+
+## 検証方法
+
+以下の公式ソースと記事の記述を照合しました。
+
+- AWS公式ブログ: https://aws.amazon.com/jp/blogs/aws/announcing-amazon-aurora-postgresql-serverless-database-creation-in-seconds/
+- AWS公式ドキュメント: https://docs.aws.amazon.com/AmazonRDS/latest/AuroraUserGuide/CHAP_GettingStartedAurora.AuroraPostgreSQL.ExpressConfig.html
+- AWS Aurora料金ページ: https://aws.amazon.com/rds/aurora/pricing/
+
+## 検証結果サマリ
+
+記事の技術的記述は全体的に正確です。公式ドキュメントとの不整合や誤った情報は確認されませんでした。
+
+## 検証項目の詳細
+
+### 1. Express Configurationの概要説明 — 正確
+
+- 「2クリック・数秒でデータベースを作成」: 公式ドキュメントの手順と一致
+- 「VPCなしでデータベースが作成される」: ドキュメントで `VPCNetworkingEnabled=false` がExpress Configurationの条件と明記
+- 「Internet Access Gatewayを通じて接続可能」: ドキュメントで `InternetAccessGatewayEnabled=true` が条件と明記。PostgreSQLワイヤプロトコルでの接続もドキュメントに記載あり
+- 「IAM認証がデフォルトで有効（パスワードレス）」: ドキュメントでIAM認証がExpress Configurationの唯一の認証方式と明記
+- 「ACU秒単位従量課金」: Aurora Serverless v2はACU-hourベースで秒単位プロレーション。正確
+- 「AWS Free Tier対応」: 料金ページで確認。4 ACU、1 GBストレージまで無料枠あり
+
+### 2. CLIコマンド — 正確
+
+```bash
+aws rds create-db-cluster \
+    --db-cluster-identifier my-express-cluster \
+    --engine aurora-postgresql \
+    --with-express-configuration
+```
+
+公式ドキュメントのCLI例と完全一致。`--with-express-configuration` フラグが正しい。
+
+### 3. psql接続コマンド — 正確
+
+- `aws rds generate-db-auth-token` のパラメータ（`--hostname`, `--port`, `--username`）は正しい
+- `PGPASSWORD` 環境変数にトークンを設定するパターンは標準的な手法
+- `sslmode=require` の指定は動作する（Express Configurationはデフォルト暗号スイートを使用）
+- 「トークンは15分間有効」: ドキュメントで確認済み
+- 「`rds-db:connect` のIAM権限が必要」: ドキュメントで確認済み
+
+### 4. 接続方法の説明 — 正確
+
+- CloudShell接続手順: ドキュメントの手順と一致
+- pgAdmin接続手順（Get tokenユーティリティ使用）: ドキュメントと一致
+- 接続情報テーブル（Hostname, Port 5432, Username postgres, Database postgres）: ドキュメントのデフォルト設定と一致
+
+### 5. 制約事項テーブル — 正確
+
+以下の制約はすべて公式ドキュメントで確認:
+
+| 記事の記述 | ドキュメントとの整合性 |
+| --- | --- |
+| Aurora PostgreSQLのみ（MySQLは非対応） | 一致 |
+| VPCへの関連付け不可 | 一致 |
+| Internet Access Gatewayの無効化不可 | 一致 |
+| IPv4のみ（IPv6非対応） | 一致 |
+| IAM認証のみ（Secrets Manager非対応） | 一致 |
+| カスタムKMSキー使用不可 | 一致 |
+| エンジンバージョンの選択不可（アップグレードのみ可） | 一致 |
+
+### 6. 非対応機能リスト — 正確
+
+記事に列挙された9つの非対応機能（Aurora Limitless Database, Aurora Global Database, RDS Proxy, Aurora Zero-ETL Integration, RDS Query Editor, Blue/Green Deployments, Database Activity Streams, Zero Downtime Patching, Babelfish）はすべてドキュメントの非対応リストに含まれています。
+
+なお、ドキュメントにはこれ以外にも非対応機能（Kerberos認証、設定可能な暗号スイート、作成時のカスタムパラメータグループなど）がありますが、記事は「非対応機能も結構あります」と部分的なリストであることを示唆しており、問題ありません。
+
+### 7. バージョン情報テーブル — 正確
+
+- 「Aurora PostgreSQL Serverless v2」: ドキュメントで確認
+- 「デフォルトポート: 5432」: ドキュメントで確認
+- 「認証方式: IAM認証（デフォルト・変更不可）」: ドキュメントで確認
+
+### 8. DSQLとの比較所感 — 問題なし
+
+- 「どちらもサーバーレスで秒単位の従量課金、数秒で起動できる」: 事実として正確
+- 「DSQLにはマルチリージョン対応という強み」: 事実として正確
+- 「一方的にどちらが優れているとは言えない」: 中立的な記述で適切
+
+### 9. 過去記事との関連付け — 正確
+
+IAM認証トークン（15分有効のエフェメラルトークン）の仕組みがAurora DSQLと共通であるという記述は技術的に正確です。
+
+## 改善提案（任意・技術的正確性に影響しない軽微な点）
+
+以下は記事の正確性には影響しませんが、読者の再現性向上のために検討してもよい点です。
+
+1. 前提条件に必要なIAMパーミッション（`rds:CreateDBCluster`, `rds:CreateDBInstance`, `rds:EnableInternetAccessGateway`, `ec2:DescribeAvailabilityZones`, `iam:CreateServiceLinkedRole`）の記載があると、権限不足でエラーになる読者を減らせる可能性がある
+2. 利用可能リージョンの制限（AWS China, GovCloud, 中東(UAE), 中東(バーレーン)では利用不可）の言及があると親切
+3. 166行目「VPC内に移動する、といったことはできない模様です」の「模様です」は、公式ドキュメントに明記されている仕様なので「できません」と断言してよい
+
+これらはいずれも技術的な誤りではなく、情報の補足に関する提案です。
