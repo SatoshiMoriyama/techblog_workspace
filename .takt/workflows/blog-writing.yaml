@@ -1,7 +1,7 @@
 name: blog-writing
-description: ブログ執筆ピース（企画確認 → 執筆 → lint → レビュー → 修正 → lint → レビュー...→ 完了）
-max_movements: 20
-initial_movement: plan
+description: ブログ執筆ワークフロー（企画確認 → 執筆 → lint → レビュー → 修正 → lint → レビュー...→ 完了）
+max_steps: 20
+initial_step: plan
 loop_monitors:
   - cycle:
       - reviewers
@@ -25,7 +25,7 @@ loop_monitors:
           next: reviewers
         - condition: 非生産的（同じ指摘が繰り返される）
           next: COMPLETE
-movements:
+steps:
   - name: plan
     edit: false
     persona: blog-planner

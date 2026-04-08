@@ -21,3 +21,5 @@
 !facets/instructions/**
 !facets/output-contracts/
 !facets/output-contracts/**
+!workflows/
+!workflows/**
