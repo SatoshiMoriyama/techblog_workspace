@@ -29,27 +29,12 @@ steps:
   - name: plan
     edit: false
     persona: blog-planner
+    provider: kiro
+    model: claude-sonnet-5
+    required_permission_mode: full
     knowledge:
       - writing-style
       - blog-guidelines
-    mcp_servers:
-      aws-knowledge:
-        command: npx
-        args: ["mcp-remote", "https://knowledge-mcp.global.api.aws"]
-      context7:
-        command: npx
-        args: ["-y", "@upstash/context7-mcp@latest"]
-    provider_options:
-      claude:
-        allowed_tools:
-          - Read
-          - Glob
-          - Grep
-          - Bash
-          - WebSearch
-          - WebFetch
-          - mcp__aws-knowledge__*
-          - mcp__context7__*
     rules:
       - condition: 企画内容が明確で執筆可能
         next: write
@@ -80,31 +65,13 @@ steps:
   - name: write
     edit: true
     persona: blog-writer
+    provider: kiro
+    model: claude-sonnet-5
+    required_permission_mode: full
     session: refresh
     knowledge:
       - writing-style
       - blog-guidelines
-    mcp_servers:
-      aws-knowledge:
-        command: npx
-        args: ["mcp-remote", "https://knowledge-mcp.global.api.aws"]
-      context7:
-        command: npx
-        args: ["-y", "@upstash/context7-mcp@latest"]
-    provider_options:
-      claude:
-        allowed_tools:
-          - Read
-          - Glob
-          - Grep
-          - Edit
-          - Write
-          - Bash
-          - WebSearch
-          - WebFetch
-          - mcp__aws-knowledge__*
-          - mcp__context7__*
-    required_permission_mode: edit
     rules:
       - condition: 執筆完了
         next: lint
@@ -139,16 +106,9 @@ steps:
   - name: lint
     edit: true
     persona: blog-writer
-    provider_options:
-      claude:
-        allowed_tools:
-          - Read
-          - Glob
-          - Grep
-          - Edit
-          - Write
-          - Bash
-    required_permission_mode: edit
+    provider: kiro
+    model: gpt-5.6-luna
+    required_permission_mode: full
     instruction: |
       blog_content/blog.md に対して markdownlint を実行し、エラーがあれば修正してください。
 
@@ -171,25 +131,11 @@ steps:
       - name: tech-review
         edit: false
         persona: tech-reviewer
+        provider: kiro
+        model: gpt-5.6-sol
+        required_permission_mode: full
         knowledge:
           - blog-guidelines
-        mcp_servers:
-          aws-knowledge:
-            command: npx
-            args: ["mcp-remote", "https://knowledge-mcp.global.api.aws"]
-          context7:
-            command: npx
-            args: ["-y", "@upstash/context7-mcp@latest"]
-        provider_options:
-          claude:
-            allowed_tools:
-              - Read
-              - Glob
-              - Grep
-              - WebSearch
-              - WebFetch
-              - mcp__aws-knowledge__*
-              - mcp__context7__*
         rules:
           - condition: approved
           - condition: needs_fix
@@ -212,17 +158,12 @@ steps:
       - name: writing-review
         edit: false
         persona: blog-editor
+        provider: kiro
+        model: claude-sonnet-5
+        required_permission_mode: full
         knowledge:
           - writing-style
           - blog-guidelines
-        provider_options:
-          claude:
-            allowed_tools:
-              - Read
-              - Glob
-              - Grep
-              - WebSearch
-              - WebFetch
         rules:
           - condition: すべて問題なし
           - condition: 改善が必要
@@ -245,40 +186,55 @@ steps:
           report:
             - name: writing-review.md
               format: supervisor-validation
+
+      - name: ai-review
+        edit: false
+        persona: blog-editor
+        provider: kiro
+        model: gpt-5.6-sol
+        required_permission_mode: full
+        knowledge:
+          - anti-ai-smell
+        rules:
+          - condition: AI臭さなし
+          - condition: AI臭さあり
+        instruction: |
+          blog_content/blog.md を「AI臭さ」の観点で専門的にレビューしてください。
+          ナレッジの anti-ai-smell.md の基準に従って判定してください。
+
+          **チェック観点:**
+          - AIが好む定型表現・言い回しが多用されていないか
+          - 過剰な丁寧さや冗長な前置きがないか
+          - 具体性に欠ける抽象的なまとめになっていないか
+          - 箇条書きの羅列で終わっていないか
+          - 筆者の実体験・感想・意見が感じられるか
+          - 読み手に語りかける自然なトーンがあるか
+
+          **重要:** この記事は Claude で執筆されています。
+          あなた（GPT）は書き手とは別のモデルとして、Claude の癖を客観的に検出してください。
+
+          AI臭さが気にならないレベルなら「AI臭さなし」、
+          修正が必要なら「AI臭さあり」と判定し、該当箇所と改善案を具体的に示してください。
+        output_contracts:
+          report:
+            - name: ai-review.md
+              format: supervisor-validation
     rules:
-      - condition: all("approved", "すべて問題なし")
+      - condition: all("approved", "すべて問題なし", "AI臭さなし")
         next: COMPLETE
-      - condition: any("needs_fix", "改善が必要")
+      - condition: any("needs_fix", "改善が必要", "AI臭さあり")
         next: fix
 
   - name: fix
     edit: true
     persona: blog-writer
+    provider: kiro
+    model: claude-sonnet-5
+    required_permission_mode: full
     session: refresh
     knowledge:
       - writing-style
       - blog-guidelines
-    mcp_servers:
-      aws-knowledge:
-        command: npx
-        args: ["mcp-remote", "https://knowledge-mcp.global.api.aws"]
-      context7:
-        command: npx
-        args: ["-y", "@upstash/context7-mcp@latest"]
-    provider_options:
-      claude:
-        allowed_tools:
-          - Read
-          - Glob
-          - Grep
-          - Edit
-          - Write
-          - Bash
-          - WebSearch
-          - WebFetch
-          - mcp__aws-knowledge__*
-          - mcp__context7__*
-    required_permission_mode: edit
     instruction: |
       レビュアーからの指摘をもとに、blog_content/blog.md を修正してください。
 
