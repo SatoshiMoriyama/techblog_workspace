@@ -27,3 +27,6 @@
 # Bundled skills (version-controlled)
 !skills/
 !skills/**
+# but never Python bytecode caches
+skills/**/__pycache__/
+skills/**/*.pyc
