@@ -1,17 +1,18 @@
 name: blog-writing
-description: ブログ執筆ワークフロー（企画確認 → 執筆 → lint → レビュー → 修正 → lint → レビュー...→ 完了）
-max_steps: 30
+description: ブログ執筆ワークフロー（企画確認 → 執筆 → lint → レビュー → 修正 → 推敲 → lint → レビュー...→ 完了）
+max_steps: 60
 initial_step: plan
 loop_monitors:
   - cycle:
       - reviewers
       - fix
+      - polish
       - lint
-    threshold: 3
+    threshold: 10
     judge:
       persona: blog-editor
       instruction: |
-        reviewers → fix → lint のループが {cycle_count} 回繰り返されました。
+        reviewers → fix → polish → lint のループが {cycle_count} 回繰り返されました。
 
         各サイクルのレポートを確認し、このループが健全（進捗がある）か、
         非生産的（同じ問題を繰り返している）かを判断してください。
@@ -30,7 +31,7 @@ steps:
     edit: false
     persona: blog-planner
     provider: kiro
-    model: claude-sonnet-5
+    model: claude-opus-5.5
     required_permission_mode: full
     knowledge:
       - writing-style
@@ -66,7 +67,7 @@ steps:
     edit: true
     persona: blog-writer
     provider: kiro
-    model: claude-sonnet-5
+    model: claude-opus-5.5
     required_permission_mode: full
     session: refresh
     knowledge:
@@ -252,6 +253,52 @@ steps:
     pass_previous_response: false
     rules:
       - condition: 修正完了
+        next: polish
+      - condition: 判断できない、情報不足
+        next: ABORT
+
+  - name: polish
+    edit: true
+    persona: blog-polisher
+    provider: kiro
+    model: claude-sonnet-5
+    required_permission_mode: full
+    session: refresh
+    knowledge:
+      - yomiyasu
+      - writing-style
+      - blog-guidelines
+    instruction: |
+      blog_content/blog.md を yomiyasu スキルの推敲原則で推敲してください。
+
+      **作業前に必ず読むこと:**
+      ナレッジの yomiyasu に記載された絶対パスのスキル本体を read tool で読み込み、
+      その指針に従ってください。GitHub など外部へは取りに行かないこと。
+      - /Users/mori/.kiro/skills/yomiyasu/SKILL.md（必読）
+      - /Users/mori/.kiro/skills/yomiyasu/references/domains/tech.md
+      - /Users/mori/.kiro/skills/yomiyasu/references/slop-catalog.md
+
+      **推敲方針:**
+      - 立場は「説明」（技術調査の報告・体験）、ドメインは tech として推敲する
+      - 最優先ルール（意味の保持・情報の不増補）を守る。主張・比重・言い切りの強さ・
+        文の働きを変えない。原文にない事実・数値・担当者・条件を足さない
+      - 比喩動詞の具体化、擬人化の解消、曖昧な主述の明確化、不要な前置き・定型の結びの整理、
+        大げさな名詞の整理、文長・読点の調整、太字が表示される書き方への修正を行う
+      - コード識別子・API 名・ファイルパス・コマンド・コマンド出力・URL は原文のまま保つ
+      - このブログの口語トーン（語尾「〜ですね」「〜みたいです」、トーンを担う見出し）は、
+        散らす目的や名詞句化のためだけに変えない
+      - writing-style・blog-guidelines と yomiyasu が食い違う場合は、ブログの文体ルールを優先する
+
+      **出力:**
+      - blog_content/blog.md を直接書き換えること
+      - SKILL.md の対話用フォーマット（変えたところ／書き手に確かめたい点）は本文に混入させない
+      - 推敲で手を入れた主な箇所とその理由をレポートにまとめること
+    rules:
+      - condition: 推敲完了
         next: lint
       - condition: 判断できない、情報不足
         next: ABORT
+    output_contracts:
+      report:
+        - name: polish.md
+          format: coder-scope
