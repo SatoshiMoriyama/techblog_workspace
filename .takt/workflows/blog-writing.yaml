@@ -272,11 +272,12 @@ steps:
       blog_content/blog.md を yomiyasu スキルの推敲原則で推敲してください。
 
       **作業前に必ず読むこと:**
-      ナレッジの yomiyasu に記載された絶対パスのスキル本体を read tool で読み込み、
+      ナレッジの yomiyasu に記載されたリポジトリ同梱のスキル本体を read tool で読み込み、
       その指針に従ってください。GitHub など外部へは取りに行かないこと。
-      - /Users/mori/.kiro/skills/yomiyasu/SKILL.md（必読）
-      - /Users/mori/.kiro/skills/yomiyasu/references/domains/tech.md
-      - /Users/mori/.kiro/skills/yomiyasu/references/slop-catalog.md
+      パスはリポジトリのルート（.takt/ がある階層）を基準にします。
+      - .takt/skills/yomiyasu/SKILL.md（必読）
+      - .takt/skills/yomiyasu/references/domains/tech.md
+      - .takt/skills/yomiyasu/references/slop-catalog.md
 
       **推敲方針:**
       - 立場は「説明」（技術調査の報告・体験）、ドメインは tech として推敲する

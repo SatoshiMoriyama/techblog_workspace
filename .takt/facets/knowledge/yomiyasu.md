@@ -2,21 +2,21 @@
 
 AI が生成した日本語の不自然な比喩、曖昧な主述、偏った構文を、意味を保ったまま読みやすく整えるための推敲スキル。本文を実際に書き直す推敲ステップ（polish）で使う。
 
-スキル本体はローカルに配置済み。コピーは持たず、作業のたびに下記の実ファイルを読んで最新の指針に従う。更新は `npx skills update yomiyasu` でローカルが新しくなり、次の実行から反映される。
+スキル本体はこのリポジトリ内に同梱済み（`.takt/skills/yomiyasu/`）。コピーを別途持たず、作業のたびに下記の実ファイルを読んで指針に従う。リポジトリ内にあるので、別マシンや worktree でもリポジトリをチェックアウトすれば参照できる。
 
-## 作業前に必ず読むファイル（絶対パス）
+## 作業前に必ず読むファイル（リポジトリルートからの相対パス）
 
-推敲を始める前に、次を read tool で読み込み、その指針に従うこと。GitHub など外部へは取りに行かない。
+推敲を始める前に、次を read tool で読み込み、その指針に従うこと。GitHub など外部へは取りに行かない。パスはリポジトリのルート（`.takt/` がある階層）を基準にする。
 
-- `/Users/mori/.kiro/skills/yomiyasu/SKILL.md` — 推敲の全原則と実行手順（必読）
-- `/Users/mori/.kiro/skills/yomiyasu/references/domains/tech.md` — 技術記事向けドメイン仕様（このブログは tech ドメイン）
-- `/Users/mori/.kiro/skills/yomiyasu/references/slop-catalog.md` — 不自然な語彙・構文と言い換え候補のカタログ
+- `.takt/skills/yomiyasu/SKILL.md` — 推敲の全原則と実行手順（必読）
+- `.takt/skills/yomiyasu/references/domains/tech.md` — 技術記事向けドメイン仕様（このブログは tech ドメイン）
+- `.takt/skills/yomiyasu/references/slop-catalog.md` — 不自然な語彙・構文と言い換え候補のカタログ
 
 必要に応じて以下も参照する。
 
-- `/Users/mori/.kiro/skills/yomiyasu/references/gemini-syntax.md`
-- `/Users/mori/.kiro/skills/yomiyasu/scripts/yomiyasu_lint.py` — 静的検査（任意）
-- `/Users/mori/.kiro/skills/yomiyasu/scripts/yomiyasu_diff.py` — 推敲前後の差分点検（任意）
+- `.takt/skills/yomiyasu/references/gemini-syntax.md`
+- `.takt/skills/yomiyasu/scripts/yomiyasu_lint.py` — 静的検査（任意）
+- `.takt/skills/yomiyasu/scripts/yomiyasu_diff.py` — 推敲前後の差分点検（任意）
 
 ## このワークフローでの使い方
 

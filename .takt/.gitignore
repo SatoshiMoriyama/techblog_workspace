@@ -23,3 +23,7 @@
 !facets/output-contracts/**
 !workflows/
 !workflows/**
+
+# Bundled skills (version-controlled)
+!skills/
+!skills/**
