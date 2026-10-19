@@ -8,7 +8,7 @@ loop_monitors:
       - fix
       - polish
       - lint
-    threshold: 10
+    threshold: 2
     judge:
       persona: blog-editor
       instruction: |
@@ -25,6 +25,21 @@ loop_monitors:
         - condition: 健全（指摘数が減少、修正が反映されている）
           next: reviewers
         - condition: 非生産的（同じ指摘が繰り返される）
+          next: COMPLETE
+  - cycle:
+      - reviewers
+      - fix
+      - polish
+      - lint
+    threshold: 6
+    judge:
+      persona: blog-editor
+      instruction: |
+        reviewers → fix → polish → lint のループが {cycle_count} 回繰り返されました。
+        通算6周に達したため、品質にかかわらずここでワークフローを強制終了します。
+        現状の到達点を COMPLETE として報告してください。
+      rules:
+        - condition: 常に（6周到達による強制終了）
           next: COMPLETE
 steps:
   - name: plan
@@ -117,6 +132,7 @@ steps:
     provider: kiro
     model: gpt-5.6-luna
     required_permission_mode: full
+    session: refresh
     instruction: |
       blog_content/blog.md に対して markdownlint を実行し、エラーがあれば修正してください。
 
@@ -140,8 +156,9 @@ steps:
         edit: false
         persona: tech-reviewer
         provider: kiro
-        model: gpt-5.6-sol
+        model: gpt-5.6-terra
         required_permission_mode: full
+        session: refresh
         knowledge:
           - blog-guidelines
         rules:
@@ -169,6 +186,7 @@ steps:
         provider: kiro
         model: claude-sonnet-5
         required_permission_mode: full
+        session: refresh
         knowledge:
           - writing-style
           - blog-guidelines
@@ -199,8 +217,9 @@ steps:
         edit: false
         persona: blog-editor
         provider: kiro
-        model: gpt-5.6-sol
+        model: gpt-5.6-terra
         required_permission_mode: full
+        session: refresh
         knowledge:
           - anti-ai-smell
         rules:
