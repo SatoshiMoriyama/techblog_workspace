@@ -1,6 +1,6 @@
 name: blog-writing
 description: ブログ執筆ワークフロー（企画確認 → 執筆 → lint → レビュー → 修正 → 推敲 → lint → レビュー...→ 完了）
-max_steps: 60
+max_steps: 22
 initial_step: plan
 loop_monitors:
   - cycle:
@@ -31,15 +31,15 @@ loop_monitors:
       - fix
       - polish
       - lint
-    threshold: 6
+    threshold: 4
     judge:
       persona: blog-editor
       instruction: |
         reviewers → fix → polish → lint のループが {cycle_count} 回繰り返されました。
-        通算6周に達したため、品質にかかわらずここでワークフローを強制終了します。
+        通算4周に達したため、品質にかかわらずここでワークフローを強制終了します。
         現状の到達点を COMPLETE として報告してください。
       rules:
-        - condition: 常に（6周到達による強制終了）
+        - condition: 常に（4周到達による強制終了）
           next: COMPLETE
 steps:
   - name: plan
@@ -321,4 +321,17 @@ steps:
     output_contracts:
       report:
         - name: polish.md
-          format: coder-scope
+          format: |
+            # 推敲レポート
+
+            ## ステータス
+            推敲を完了したか、情報不足で判断できなかったかを明記する。
+            - 完了した場合: 「推敲完了」と書く
+            - 進められなかった場合: 「情報不足」と書き、何が不足していたかを述べる
+
+            ## 推敲した箇所
+            手を入れた主な箇所を箇条書きで列挙する。各項目に「どこを・どう変えたか・なぜ」を書く。
+            修正が不要で手を入れなかった場合は「変更なし（理由）」と書く。
+
+            ## 意味の保持の確認
+            主張・比重・言い切りの強さ・情報量を変えていないこと、原文にない事実・数値を足していないことを確認した旨を書く。
