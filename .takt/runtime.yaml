@@ -1,0 +1,27 @@
+version: 1
+provider:
+  defaults:
+    profile: opus
+  profiles:
+    opus:
+      provider: kiro
+      model: claude-opus-5.5
+    sonnet:
+      provider: kiro
+      model: claude-sonnet-5
+    luna:
+      provider: kiro
+      model: gpt-5.6-luna
+    terra:
+      provider: kiro
+      model: gpt-5.6-terra
+  targets:
+    steps:
+      plan: { profile: opus }
+      write: { profile: opus }
+      lint: { profile: luna }
+      tech-review: { profile: terra }
+      writing-review: { profile: sonnet }
+      ai-review: { profile: terra }
+      fix: { profile: sonnet }
+      polish: { profile: sonnet }

@@ -45,8 +45,6 @@ steps:
   - name: plan
     edit: false
     persona: blog-planner
-    provider: kiro
-    model: claude-opus-5.5
     required_permission_mode: full
     knowledge:
       - writing-style
@@ -81,8 +79,6 @@ steps:
   - name: write
     edit: true
     persona: blog-writer
-    provider: kiro
-    model: claude-opus-5.5
     required_permission_mode: full
     session: refresh
     knowledge:
@@ -129,8 +125,6 @@ steps:
   - name: lint
     edit: true
     persona: blog-writer
-    provider: kiro
-    model: gpt-5.6-luna
     required_permission_mode: full
     session: refresh
     instruction: |
@@ -155,8 +149,6 @@ steps:
       - name: tech-review
         edit: false
         persona: tech-reviewer
-        provider: kiro
-        model: gpt-5.6-terra
         required_permission_mode: full
         session: refresh
         knowledge:
@@ -183,8 +175,6 @@ steps:
       - name: writing-review
         edit: false
         persona: blog-editor
-        provider: kiro
-        model: claude-sonnet-5
         required_permission_mode: full
         session: refresh
         knowledge:
@@ -216,8 +206,6 @@ steps:
       - name: ai-review
         edit: false
         persona: blog-editor
-        provider: kiro
-        model: gpt-5.6-terra
         required_permission_mode: full
         session: refresh
         knowledge:
@@ -255,8 +243,6 @@ steps:
   - name: fix
     edit: true
     persona: blog-writer
-    provider: kiro
-    model: claude-sonnet-5
     required_permission_mode: full
     session: refresh
     knowledge:
@@ -279,8 +265,6 @@ steps:
   - name: polish
     edit: true
     persona: blog-polisher
-    provider: kiro
-    model: claude-sonnet-5
     required_permission_mode: full
     session: refresh
     knowledge:

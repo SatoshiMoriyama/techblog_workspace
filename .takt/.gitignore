@@ -30,3 +30,6 @@
 # but never Python bytecode caches
 skills/**/__pycache__/
 skills/**/*.pyc
+
+# Runtime provider settings (version-controlled)
+!runtime.yaml
