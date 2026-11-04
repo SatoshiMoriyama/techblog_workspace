@@ -1,0 +1,138 @@
+{
+  "name": "blog-writing",
+  "description": "ブログ執筆ワークフロー（企画確認 → 執筆 → lint → 3並列レビュー → 修正 → 推敲 → lint → レビュー … → 完了）。takt の blog-writing.yaml を移植したもの。",
+  "inputs": {
+    "task": "記事の企画（テーマ・構成・ターゲット読者・参考資料・投稿先プラットフォーム）。blog_content/memo.md などの入力資料を指す場合はそのパスも書く。",
+    "workdir": "作業対象リポジトリの絶対パス。空なら現在のワークスペースルートを使う。"
+  },
+  "steps": [
+    {
+      "type": "step",
+      "id": "setup",
+      "agent": "blog-writer",
+      "modelId": "gpt-5.6-luna",
+      "effortLevel": "low",
+      "captureOutput": true,
+      "prompt": "You are the setup step for a blog-writing run. Do ONLY this, nothing else:\n1. Determine the base directory: if {{workdir}} is a non-empty absolute path, use it; otherwise use the current workspace root (an absolute path).\n2. Compute a run timestamp string in the format YYYY-MM-DD_HH-MM-SS (e.g. `date +%Y-%m-%d_%H-%M-%S`).\n3. Create the directory <base>/.agents/blog-writing/<timestamp>/ with `mkdir -p`.\nYour ENTIRE final response MUST be exactly that absolute directory path and NOTHING else - no prose, no quotes, no backticks, no trailing slash, no trailing punctuation or newline commentary. Later steps consume this exact string as the run directory."
+    },
+    {
+      "type": "step",
+      "id": "plan",
+      "agent": "blog-planner",
+      "modelId": "claude-opus-5.5",
+      "effortLevel": "high",
+      "prompt": "ユーザーから提供された企画を確認し、執筆に必要な情報が揃っているか判断してください。企画: {{task}}。作業ディレクトリ: {{workdir}}。レビュー関連の成果物を置く実行ディレクトリ: {{setup.output}}。\n\n**確認項目:**\n- 記事のテーマと目的が明確か\n- ターゲット読者が想定されているか\n- 記事の構成（見出し案）があるか\n- 技術的に正確な情報を書くための参考資料やURLがあるか\n- 投稿先プラットフォーム（Qiita or はてなブログ）が指定されているか\n  - 指定がなければユーザーに確認すること（リンクの埋め込み形式が異なるため）。確認が必要な場合は send_message を severity=warning で送り、回答を待つ\n\n既存記事を読んで文体・構成パターンを把握し、企画内容の分析結果と執筆方針をレポートにまとめて {{setup.output}}/plan.md に書いてください。投稿先プラットフォーム（Qiita / はてなブログ）を plan.md に明記すること（後続の write ステップがリンク埋め込み形式の切り替えに使う）。\n\n企画が不明確・情報不足で執筆に進めない場合は、確認事項を列挙して send_message を severity=warning で送り、ユーザーの回答を待ってください。",
+      "artifacts": {
+        "plan": "{{setup.output}}/plan.md"
+      }
+    },
+    {
+      "type": "step",
+      "id": "write",
+      "agent": "blog-writer",
+      "modelId": "claude-opus-5.5",
+      "effortLevel": "high",
+      "prompt": "プランナーが確認した企画内容（{{artifacts.plan}}）をもとに、ブログ記事を執筆してください。knowledge の writing-style と blog-guidelines に従ってください。\n\n**インプット資料の画像について:**\n企画メモやインプット資料にスクリーンショット・図などの画像が含まれている場合は、必ず画像の内容を確認し、記事の記述に反映してください。\n- 画像に写っている UI の状態、設定値、エラーメッセージなどを正確に読み取る\n- 画像の情報をもとに手順や説明文を具体的に記述する\n- 画像で示されている操作の流れを文章で正確に再現する\n\n**記事内の画像挿入について:**\nAIは画像を作成できません。スクリーンショットや図を入れるべき箇所には、以下の形式でマーカーコメントを挿入してください:\n`<!-- TODO: screenshot - 説明文 -->`\n例: `<!-- TODO: screenshot - AWSコンソールでLambda関数を作成した画面 -->`\n\n**リンクの埋め込み形式:**\nプランナーのレポート（{{artifacts.plan}}）で確認した投稿先プラットフォームに合わせてリンクを記述すること。\n- Qiita: URLを単独行で貼る\n- はてなブログ: `[URL:embed:cite]` 形式で貼る\n\n**出力先:**\n- blog_content/blog.md に記事を作成すること（作業ディレクトリ {{workdir}} 基準）"
+    },
+    {
+      "type": "step",
+      "id": "lint",
+      "agent": "blog-writer",
+      "modelId": "gpt-5.6-luna",
+      "effortLevel": "low",
+      "prompt": "blog_content/blog.md に対して markdownlint を実行し、エラーがあれば修正してください。作業ディレクトリ: {{workdir}}。\n\n**手順:**\n1. `npx markdownlint-cli2 blog_content/blog.md` を実行（このプロジェクトは markdownlint-cli2 を使う。package.json の `lint` スクリプトも参照してよい）\n2. エラーがあれば記事を修正\n3. 再度 lint を実行してエラーが0になるまで繰り返す\n\n**注意:**\n- .markdownlint.json の設定に従うこと\n- lint修正で文章の意味を変えないこと"
+    },
+    {
+      "type": "repeat",
+      "id": "review-loop",
+      "maxIterations": 3,
+      "onMaxIterations": "pause",
+      "stopCondition": {
+        "fileCheck": {
+          "path": "{{setup.output}}/review.json",
+          "jsonPath": "verdict",
+          "value": "APPROVED"
+        }
+      },
+      "steps": [
+        {
+          "type": "parallel",
+          "id": "reviewers",
+          "joinPolicy": "all",
+          "branches": [
+            {
+              "type": "step",
+              "id": "tech-review",
+              "agent": "tech-reviewer",
+              "modelId": "gpt-5.6-terra",
+              "effortLevel": "high",
+              "prompt": "blog_content/blog.md（作業ディレクトリ {{workdir}} 基準）の技術的な正確性をレビューしてください。\n\n**チェック項目:**\n- 技術的な記述が正確か（コマンド、設定値、API仕様など）\n- コード例が動作するか\n- 手順通りに進めて再現できるか\n- 最新バージョンの情報か（古い情報でないか）\n- 誤解を招く技術的表現がないか\n\nレビュー結果を {{setup.output}}/tech-review.md に書いてください。問題なければ本文冒頭に判定として `approved`、修正が必要なら `needs_fix` を明記すること。\n\nANTI-BIAS: 他のレビュアーのファイル（writing-review.md, ai-review.md）は読まないこと。自分のファイルだけを書く。",
+              "artifacts": {
+                "tech_review": "{{setup.output}}/tech-review.md"
+              }
+            },
+            {
+              "type": "step",
+              "id": "writing-review",
+              "agent": "blog-editor",
+              "modelId": "claude-sonnet-5.5",
+              "effortLevel": "medium",
+              "prompt": "writing-review の観点で、blog_content/blog.md（作業ディレクトリ {{workdir}} 基準）の文章品質と構成をレビューしてください。knowledge の writing-style と blog-guidelines を基準に評価してください。\n\n特に以下を重点的にチェック:\n- 既存記事との文体の一貫性\n- 人間らしさ（AI臭さがないか）\n- 炎上リスク\n- 構成の適切さ\n\ndocs/blog-evaluation.md の7観点で採点してください。合否判定の対象は6観点（防御力・思考整理力・実践応用性・構成と読みやすさ・コミュニケーション力・炎上リスク）です。人間らしさは参考採点のみ（合否に含めない）。対象6観点がすべて4.0点以上なら判定を `すべて問題なし`、1つでも4.0未満があれば `改善が必要` としてください。\n\nレビュー結果を {{setup.output}}/writing-review.md に書いてください。各観点のスコアと判定理由、本文冒頭に判定（`すべて問題なし` / `改善が必要`）を明記すること。\n\nANTI-BIAS: 他のレビュアーのファイル（tech-review.md, ai-review.md）は読まないこと。自分のファイルだけを書く。",
+              "artifacts": {
+                "writing_review": "{{setup.output}}/writing-review.md"
+              }
+            },
+            {
+              "type": "step",
+              "id": "ai-review",
+              "agent": "blog-editor",
+              "modelId": "gpt-5.6-terra",
+              "effortLevel": "high",
+              "prompt": "ai-review の観点で、blog_content/blog.md（作業ディレクトリ {{workdir}} 基準）を「AI臭さ」の観点で専門的にレビューしてください。knowledge の anti-ai-smell.md の基準に従って判定してください。\n\n**チェック観点:**\n- AIが好む定型表現・言い回しが多用されていないか\n- 過剰な丁寧さや冗長な前置きがないか\n- 具体性に欠ける抽象的なまとめになっていないか\n- 箇条書きの羅列で終わっていないか\n- 筆者の実体験・感想・意見が感じられるか\n- 読み手に語りかける自然なトーンがあるか\n\n**重要:** この記事は Claude で執筆されています。あなた（GPT）は書き手とは別のモデルとして、Claude の癖を客観的に検出してください。\n\nレビュー結果を {{setup.output}}/ai-review.md に書いてください。AI臭さが気にならないレベルなら判定を `AI臭さなし`、修正が必要なら `AI臭さあり` とし、該当箇所と改善案を具体的に示すこと。本文冒頭に判定を明記する。\n\nANTI-BIAS: 他のレビュアーのファイル（tech-review.md, writing-review.md）は読まないこと。自分のファイルだけを書く。",
+              "artifacts": {
+                "ai_review": "{{setup.output}}/ai-review.md"
+              }
+            }
+          ]
+        },
+        {
+          "type": "step",
+          "id": "aggregate",
+          "agent": "blog-editor",
+          "modelId": "claude-sonnet-5.5",
+          "effortLevel": "medium",
+          "captureOutput": true,
+          "prompt": "3つのレビュー結果を集約して判定を確定します。実行ディレクトリ: {{setup.output}}。次の3ファイルを全て読んでください: {{artifacts.tech_review}}, {{artifacts.writing_review}}, {{artifacts.ai_review}}。\n\n各レビューの判定を読み取り、集約ルールを適用します:\n- tech-review が `approved` かつ writing-review が `すべて問題なし` かつ ai-review が `AI臭さなし` の3つ全てが成立 → verdict は `APPROVED`\n- いずれか1つでも needs_fix / 改善が必要 / AI臭さあり があれば → verdict は `CHANGES_REQUESTED`\n\n集約結果を JSON で {{setup.output}}/review.json に書いてください（既存なら上書き）。スキーマ（キーと verdict の値は固定の英字。それ以外の説明文は日本語でよい）:\n```json\n{\n  \"verdict\": \"APPROVED\",\n  \"tech\": { \"judgment\": \"approved\", \"summary\": \"...\" },\n  \"writing\": { \"judgment\": \"すべて問題なし\", \"summary\": \"...\" },\n  \"ai\": { \"judgment\": \"AI臭さなし\", \"summary\": \"...\" },\n  \"findings\": [\n    { \"source\": \"tech|writing|ai\", \"problem\": \"指摘の要点（日本語）\", \"status\": \"open\" }\n  ]\n}\n```\nverdict は必ず `APPROVED` または `CHANGES_REQUESTED` のどちらか。findings には CHANGES_REQUESTED のとき各レビューの未解決指摘を列挙する（APPROVED なら空配列でよい）。\n\n集約後、verdict が `CHANGES_REQUESTED` のときは send_message を severity=warning で送り、指摘の要点（どのレビューの何が問題か、blocking / non-blocking の別）を日本語で簡潔にまとめて報告し、オーケストレーター／ユーザーの判断を仰いでください。verdict が `APPROVED` のときは send_message を送らず、そのまま最終応答に `APPROVED` と書いて終了してください。",
+          "artifacts": {
+            "review": "{{setup.output}}/review.json"
+          }
+        },
+        {
+          "type": "step",
+          "id": "fix",
+          "agent": "blog-writer",
+          "modelId": "claude-sonnet-5.5",
+          "effortLevel": "medium",
+          "prompt": "レビュアーからの指摘をもとに、blog_content/blog.md（作業ディレクトリ {{workdir}} 基準）を修正してください。指摘は {{setup.output}}/review.json の findings（status が rejected でないもの）と、各レビューファイル {{artifacts.tech_review}} / {{artifacts.writing_review}} / {{artifacts.ai_review}} を読んで把握すること。\n\nverdict が既に APPROVED の場合は、このステップでは何も修正せず「修正不要（APPROVED のため）」とだけ報告してください。\n\n**修正方針:**\n- 技術レビューの指摘は正確性を優先して修正\n- 文章レビューの指摘は knowledge の writing-style に合わせて修正\n- 設計ドキュメント・確定仕様・ガイドラインと矛盾する指摘はコーダー判断で却下してよいが、却下する場合は review.json の該当 finding に status: rejected と rejectionReason（日本語）を残すこと\n- 修正内容をレポートにまとめること"
+        },
+        {
+          "type": "step",
+          "id": "polish",
+          "agent": "blog-polisher",
+          "modelId": "claude-sonnet-5.5",
+          "effortLevel": "medium",
+          "prompt": "blog_content/blog.md（作業ディレクトリ {{workdir}} 基準）を yomiyasu スキルの推敲原則で推敲してください。verdict（{{setup.output}}/review.json）が既に APPROVED の場合は推敲せず「推敲不要（APPROVED のため）」とだけ報告してください。\n\n**作業前に必ず読むこと:**\nknowledge の yomiyasu に記載されたリポジトリ同梱のスキル本体を read tool で読み込み、その指針に従ってください。GitHub など外部へは取りに行かないこと。パスはリポジトリのルート（.takt/ がある階層）を基準にします。\n- .takt/skills/yomiyasu/SKILL.md（必読）\n- .takt/skills/yomiyasu/references/domains/tech.md\n- .takt/skills/yomiyasu/references/slop-catalog.md\n\n**推敲方針:**\n- 立場は「説明」（技術調査の報告・体験）、ドメインは tech として推敲する\n- 最優先ルール（意味の保持・情報の不増補）を守る。主張・比重・言い切りの強さ・文の働きを変えない。原文にない事実・数値・担当者・条件を足さない\n- 比喩動詞の具体化、擬人化の解消、曖昧な主述の明確化、不要な前置き・定型の結びの整理、大げさな名詞の整理、文長・読点の調整、太字が表示される書き方への修正を行う\n- コード識別子・API 名・ファイルパス・コマンド・コマンド出力・URL は原文のまま保つ\n- このブログの口語トーン（語尾「〜ですね」「〜みたいです」、トーンを担う見出し）は、散らす目的や名詞句化のためだけに変えない\n- writing-style・blog-guidelines と yomiyasu が食い違う場合は、ブログの文体ルールを優先する\n\n**出力:**\n- blog_content/blog.md を直接書き換えること\n- SKILL.md の対話用フォーマット（変えたところ／書き手に確かめたい点）は本文に混入させない\n- 推敲で手を入れた主な箇所とその理由をレポートにまとめること"
+        },
+        {
+          "type": "step",
+          "id": "lint-fix",
+          "agent": "blog-writer",
+          "modelId": "gpt-5.6-luna",
+          "effortLevel": "low",
+          "prompt": "blog_content/blog.md（作業ディレクトリ {{workdir}} 基準）に対して markdownlint を再実行し、エラーがあれば修正してください。\n\n**手順:**\n1. `npx markdownlint-cli2 blog_content/blog.md` を実行（このプロジェクトは markdownlint-cli2 を使う。package.json の `lint` スクリプトも参照してよい）\n2. エラーがあれば記事を修正\n3. 再度 lint を実行してエラーが0になるまで繰り返す\n\n**注意:**\n- .markdownlint.json の設定に従うこと\n- lint修正で文章の意味を変えないこと\n- このステップの完了後、ループ先頭の reviewers に戻って再レビューされる"
+        }
+      ]
+    }
+  ],
+  "modelId": "claude-opus-5.5"
+}
