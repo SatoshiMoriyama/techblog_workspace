@@ -29,6 +29,12 @@ setup（実行ディレクトリ作成）
 - repeat の `stopCondition.fileCheck` は `review.json` の `verdict == "APPROVED"` を判定する。各周の末尾（lint-fix）まで回った後に再評価され、未達なら reviewers から次周へ。
 - 収束しない場合は `onMaxIterations: pause` で 3 周上限で停止し、オーケストレーター（親セッション）に委ねる。これは本リポジトリの workflow-review steering（実装ループの maxIterations=3 上限、収束しなければ pause）に合わせた。takt 側は通算4周が上限だが、Kiro 側では 3 に引き下げている。
 
+### ループ構造の既知の挙動（初回実走で確認すること）
+
+- `stopCondition` は**各周の末尾（lint-fix の後）で評価される**。そのため初回レビューで `verdict == "APPROVED"` になっても、同じ周の `fix → polish → lint-fix` は一度起動する。これらのステップには prompt で「verdict が APPROVED なら何もせず『修正不要（APPROVED のため）』とだけ報告する」no-op 指示を入れて無害化している。記事を壊す経路ではないが、無駄な起動が気になる場合は repeat の判定位置を見直す（現状は Kiro の repeat が末尾で stopCondition を評価する仕様に合わせた設計）。初回実走で no-op 指示が効くことを確認する。
+- 3 周とも `CHANGES_REQUESTED` のまま上限に達した場合、**最後の `fix → polish → lint-fix` の結果は再レビューされないまま pause する**（次周の reviewers に入る前に maxIterations で止まるため）。pause 後にオーケストレーター／ユーザーが最終成果物を直接確認するか、`extend_repeat` で追加周を与えて再レビューさせること。
+- エージェント JSON の `tools` に指定した名前（`fs_read` / `web_search` / `web_fetch` / `report` など）が実行環境で解決されるかは、スキーマ検証だけでは未確認。初回実走で web 検索などが実際に使えるか確認すること。
+
 ## takt → Kiro の対応関係
 
 ### ペルソナ → カスタムエージェント

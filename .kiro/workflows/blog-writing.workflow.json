@@ -13,7 +13,7 @@
       "modelId": "gpt-5.6-luna",
       "effortLevel": "low",
       "captureOutput": true,
-      "prompt": "You are the setup step for a blog-writing run. Do ONLY this, nothing else:\n1. Determine the base directory: if {{workdir}} is a non-empty absolute path, use it; otherwise use the current workspace root (an absolute path).\n2. Compute a run timestamp string in the format YYYY-MM-DD_HH-MM-SS (e.g. `date +%Y-%m-%d_%H-%M-%S`).\n3. Create the directory <base>/.agents/blog-writing/<timestamp>/ with `mkdir -p`.\nYour ENTIRE final response MUST be exactly that absolute directory path and NOTHING else - no prose, no quotes, no backticks, no trailing slash, no trailing punctuation or newline commentary. Later steps consume this exact string as the run directory."
+      "prompt": "blog-writing 実行のセットアップステップです。次の作業だけを行い、それ以外は何もしないこと:\n1. ベースディレクトリを決める: {{workdir}} が空でない絶対パスならそれを使う。空なら現在のワークスペースルート（絶対パス）を使う。\n2. 実行タイムスタンプ文字列を YYYY-MM-DD_HH-MM-SS 形式で生成する（例: `date +%Y-%m-%d_%H-%M-%S`）。\n3. `mkdir -p` で <base>/.agents/blog-writing/<timestamp>/ を作成する。\n最終応答は、作成した絶対ディレクトリパスだけを返すこと。前後に説明・引用符・バッククォート・末尾スラッシュ・句読点・改行後のコメントを一切付けない。後続ステップがこの文字列をそのまま実行ディレクトリとして使う。"
     },
     {
       "type": "step",
