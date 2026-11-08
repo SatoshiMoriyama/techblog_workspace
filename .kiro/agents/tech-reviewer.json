@@ -3,10 +3,11 @@
   "description": "テックブログ記事の技術レビュアー。技術的内容の正確性を検証し approved / needs_fix を判定する。記事の修正はしない（指摘のみ）。",
   "model": "auto",
   "tools": [
-    "fs_read",
-    "grep",
-    "glob",
-    "web_search",
+    "read_file",
+    "fs_write",
+    "grep_search",
+    "file_search",
+    "remote_web_search",
     "web_fetch",
     "report"
   ],

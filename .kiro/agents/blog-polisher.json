@@ -3,11 +3,12 @@
   "description": "テックブログの推敲担当。yomiyasu スキルの推敲原則で記事本文を意味を保ったまま読みやすく整える。作業前に .takt/skills/yomiyasu/ のスキル本体を read で読む。",
   "model": "auto",
   "tools": [
-    "fs_read",
+    "read_file",
     "fs_write",
+    "str_replace",
     "execute_bash",
-    "grep",
-    "glob",
+    "grep_search",
+    "file_search",
     "report"
   ],
   "resources": [

@@ -3,12 +3,13 @@
   "description": "テックブログのライター。企画と執筆方針に従い既存記事の文体で記事を執筆する。lint修正・レビュー指摘に基づく fix 修正も担う。レビューはしない。",
   "model": "auto",
   "tools": [
-    "fs_read",
+    "read_file",
     "fs_write",
+    "str_replace",
     "execute_bash",
-    "grep",
-    "glob",
-    "web_search",
+    "grep_search",
+    "file_search",
+    "remote_web_search",
     "web_fetch",
     "report"
   ],

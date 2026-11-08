@@ -3,10 +3,11 @@
   "description": "テックブログの編集者。文章品質レビュー（writing-review）とAI臭さレビュー（ai-review）を担う。記事の修正はしない（指摘のみ）。ステップの指示でどちらの観点か切り替える。",
   "model": "auto",
   "tools": [
-    "fs_read",
-    "grep",
-    "glob",
-    "web_search",
+    "read_file",
+    "fs_write",
+    "grep_search",
+    "file_search",
+    "remote_web_search",
     "web_fetch",
     "report"
   ],

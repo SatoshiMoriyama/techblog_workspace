@@ -11,7 +11,7 @@ Kiro の `run_workflow` にこのレシピを読み込ませる。`inputs` に `
 
 ## ステップフロー
 
-```
+```text
 setup（実行ディレクトリ作成）
   → plan（企画確認・方針策定）
   → write（執筆、blog_content/blog.md に出力）
@@ -22,18 +22,27 @@ setup（実行ディレクトリ作成）
          → fix（指摘修正）
          → polish（yomiyasu 推敲）
          → lint-fix（markdownlint 再実行）
-     stopCondition: review.json の verdict が "APPROVED" になったらループ終了
+     stopCondition: review.json の loopAction が "exit" になったらループ終了
 ```
 
-- `setup` は実行ごとに `<base>/.agents/blog-writing/<timestamp>/` を作る。レビュー成果物（各レビュー .md と `review.json`）をここに置く。ループの `stopCondition` は `{{setup.output}}/review.json` の `verdict` を見る。
-- repeat の `stopCondition.fileCheck` は `review.json` の `verdict == "APPROVED"` を判定する。各周の末尾（lint-fix）まで回った後に再評価され、未達なら reviewers から次周へ。
+- `setup` は実行ごとに `<base>/.agents/blog-writing/<timestamp>/` を作る。レビュー成果物（各レビュー .md、`review.json`、`decisions.json`）をここに置く。
+- repeat の `stopCondition.fileCheck` は `review.json` の `loopAction == "exit"` を判定する。各周の末尾（lint-fix）まで回った後に再評価され、未達なら reviewers から次周へ。
+- `loopAction` は aggregate が書く。verdict が `APPROVED` なら `exit`、`CHANGES_REQUESTED` なら `continue`。ユーザーが「ループを終了する」と判断した場合は verdict を `CHANGES_REQUESTED` のまま残し、`loopAction` だけ `exit` にする。fix / polish / lint-fix は `loopAction == "exit"` なら何もしない。
+  - 背景: `update_workflow` の `update_status`（nodeId=review-loop）は maxIterations で止まったループにしか効かず、途中の周でループだけを抜けられなかった。aggregate を完了扱いにすると後続の fix から次周に進んでしまう。
+
+### 既決事項の引き継ぎ（decisions.json）
+
+- aggregate は、ユーザーの判断（対応 accepted / 却下 rejected / 見送り deferred）を `decisions.json` に追記する。`review.json` は毎周上書きされるが、`decisions.json` は実行中ずっと残る。
+- 3レビュアーはレビュー前に `decisions.json` を読み、rejected / deferred の論点を再指摘しない（判定・スコアの根拠にもしない）。除外した指摘はレビューファイル末尾に列挙する。他レビュアーの結果ではないので ANTI-BIAS の対象外。
+- aggregate も指摘を `decisions.json` と照合し、既決の論点は `status: rejected` で残す。未達レビューがあっても、open の blocking 指摘が残っていなければ `APPROVED` にする。
+  - 背景: 初回実走で、却下・見送りにした指摘（イベントの時間、感想の薄さ等）が次周のレビュアーにそのまま再掲され、ループが空転した。
 - 収束しない場合は `onMaxIterations: pause` で 3 周上限で停止し、オーケストレーター（親セッション）に委ねる。これは本リポジトリの workflow-review steering（実装ループの maxIterations=3 上限、収束しなければ pause）に合わせた。takt 側は通算4周が上限だが、Kiro 側では 3 に引き下げている。
 
 ### ループ構造の既知の挙動（初回実走で確認すること）
 
-- `stopCondition` は**各周の末尾（lint-fix の後）で評価される**。そのため初回レビューで `verdict == "APPROVED"` になっても、同じ周の `fix → polish → lint-fix` は一度起動する。これらのステップには prompt で「verdict が APPROVED なら何もせず『修正不要（APPROVED のため）』とだけ報告する」no-op 指示を入れて無害化している。記事を壊す経路ではないが、無駄な起動が気になる場合は repeat の判定位置を見直す（現状は Kiro の repeat が末尾で stopCondition を評価する仕様に合わせた設計）。初回実走で no-op 指示が効くことを確認する。
+- `stopCondition` は**各周の末尾（lint-fix の後）で評価される**。そのため初回レビューで `verdict == "APPROVED"` になっても、同じ周の `fix → polish → lint-fix` は一度起動する。これらのステップには prompt で「loopAction が exit なら何もせず報告だけする」no-op 指示を入れて無害化している。no-op が実際に効くかは未確認（初回実走では APPROVED にもループ終了にも到達していない）。記事を壊す経路ではないが、無駄な起動が気になる場合は repeat の判定位置を見直す（現状は Kiro の repeat が末尾で stopCondition を評価する仕様に合わせた設計）。初回実走で no-op 指示が効くことを確認する。
 - 3 周とも `CHANGES_REQUESTED` のまま上限に達した場合、**最後の `fix → polish → lint-fix` の結果は再レビューされないまま pause する**（次周の reviewers に入る前に maxIterations で止まるため）。pause 後にオーケストレーター／ユーザーが最終成果物を直接確認するか、`extend_repeat` で追加周を与えて再レビューさせること。
-- エージェント JSON の `tools` に指定した名前（`fs_read` / `web_search` / `web_fetch` / `report` など）が実行環境で解決されるかは、スキーマ検証だけでは未確認。初回実走で web 検索などが実際に使えるか確認すること。
+- エージェント JSON の `tools` は実行環境のツール名と一致させる必要がある（不一致の名前はエラーにならず黙って無視される）。初回実走で `fs_read` / `grep` / `glob` / `web_search` が解決されず、planner がローカルファイルを読めなかったため、`read_file` / `grep_search` / `file_search` / `remote_web_search` に置換した。成果物ファイルを書くステップ（plan / 各レビュー / aggregate）のエージェントには `fs_write` を、記事を編集する writer / polisher には `str_replace` を追加した。`report` は対応する実名を確認できておらず、未解決のまま残している。
 
 ## takt → Kiro の対応関係
 
@@ -89,7 +98,7 @@ takt は reviewers ステップの `rules` で `all("approved","すべて問題�
 
 1. `reviewers`（parallel, joinPolicy=all）で3レビューを並列実行し、それぞれが判定を自分のファイルに書く（`tech-review.md` / `writing-review.md` / `ai-review.md`）。各レビュアーは他レビュアーのファイルを読まない（ANTI-BIAS）。
 2. `aggregate` ステップが3ファイルを読み、集約ルール（tech=approved かつ writing=すべて問題なし かつ ai=AI臭さなし のとき `APPROVED`、いずれか未達なら `CHANGES_REQUESTED`）を適用して `review.json` に `verdict` を書く。
-3. repeat の `stopCondition` が `review.json` の `verdict == "APPROVED"` を判定してループ終了を決める。
+3. repeat の `stopCondition` が `review.json` の `loopAction == "exit"` を判定してループ終了を決める（APPROVED、またはユーザーによるループ終了）。
 4. `CHANGES_REQUESTED` のときは aggregate が `send_message`（severity=warning）で指摘の要点を報告し、ユーザー／オーケストレーターの判断を仰ぐ。
 
 `writing-review` は `docs/blog-evaluation.md` の7観点採点（合否対象6観点が全て4.0以上で合格、人間らしさは参考）を踏襲する。
