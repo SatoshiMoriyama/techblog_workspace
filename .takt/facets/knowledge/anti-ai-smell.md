@@ -1,5 +1,7 @@
 # Anti AI Smell（AI臭さ排除ガイド）
 
+> このファイルを変更する前に `.kiro/workflows/blog-writing.decisions.md` を読むこと。記録された決定に反する変更（ルールの削除・元の形への巻き戻し）をしない。
+
 AI生成文章に頻出するパターンを検出し、人間らしい文章に修正するためのチェックリスト。
 
 参考: https://qiita.com/minorun365/items/699e89544da8b0de300d

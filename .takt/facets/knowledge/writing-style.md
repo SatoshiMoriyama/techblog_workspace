@@ -1,5 +1,7 @@
 # Writing Style（文体ルール）
 
+> このファイルを変更する前に `.kiro/workflows/blog-writing.decisions.md` を読むこと。記録された決定に反する変更（ルールの削除・元の形への巻き戻し）をしない。
+
 既存記事（Qiita: s_moriyama）から抽出した文体ルール。
 
 ## 表記ルール

@@ -1,0 +1,87 @@
+# blog-writing ワークフローの決定記録
+
+このワークフロー（`blog-writing.workflow.json`、`.kiro/agents/` のエージェント定義、`.takt/facets/knowledge/` の writing-style.md / blog-guidelines.md / anti-ai-smell.md）を見直すときは、先にこのファイルを読むこと。
+
+ここに記録した決定は、実走やユーザーの手直しで理由が確認されたもの。一般的なベストプラクティスと逆向きのものもあるが、意図的な決定である。決定に反する変更（ルールの削除・元の形への巻き戻し）をしない。変える必要があるときは、ユーザーに確認したうえで、該当する決定をこのファイルで更新する。
+
+## D-01: ループの終了条件は review.json の loopAction で判定する
+
+- 対象: `blog-writing.workflow.json` の repeat の `stopCondition`、aggregate / fix / polish / lint-fix の prompt
+- 決定: stopCondition は `review.json` の `loopAction == "exit"` を見る。verdict が APPROVED なら exit。ユーザーがループ終了を指示した場合は、verdict を CHANGES_REQUESTED のまま、loopAction だけ exit にする。fix / polish / lint-fix は loopAction が exit なら何もしない。
+- 理由: verdict == APPROVED を条件にしていたときは、ユーザーが残りの指摘を受け入れて終えたい場合に、ループを抜ける手段がなかった。
+- 戻さないこと: stopCondition を verdict 判定に戻さない。no-op 指示を削らない（stopCondition はループ末尾で評価されるため、exit の周でも fix 以降が起動する）。
+
+## D-02: ユーザー判断を decisions.json に累積し、レビュアーに読ませる
+
+- 対象: aggregate と 3 レビュアーの prompt
+- 決定: aggregate がユーザーの対応／却下／見送りの判断を `{{setup.output}}/decisions.json` に追記する（上書きしない）。レビュアーはレビュー前に読み、rejected / deferred の論点を再指摘しない。
+- 理由: 却下理由を知らないレビュアーが、同じ指摘を毎周繰り返して空転した。実走で、2 周目以降に既決の論点が再指摘されないことを確認済み。
+- 戻さないこと: decisions.json の読み込みを、ANTI-BIAS（他レビュアーのファイルを読まない）を理由に削らない。decisions.json はレビュアーのファイルではない。
+
+## D-03: エージェント JSON の tools は実行環境のツール実名で書く
+
+- 対象: `.kiro/agents/*.json` の `tools`
+- 決定: `read_file` / `grep_search` / `file_search` / `remote_web_search` / `str_replace` / `fs_write` / `web_fetch` の実名を使う。artifacts を宣言するステップのエージェントには `fs_write` を必ず含める。
+- 理由: `fs_read` / `grep` / `glob` / `web_search` などの名前は黙って無視され、エージェントがファイルを読めなかった。artifacts があるのに書き込みツールがないと、run_workflow の検証で拒否される。
+- 戻さないこと: takt 由来のツール名に戻さない。
+
+## D-04: ai-review は執筆モデルと別系統の GPT にする
+
+- 対象: `blog-writing.workflow.json` の各ステップの `modelId`
+- 決定: 執筆（plan / write）は Claude、ai-review と tech-review は GPT 系。
+- 理由: 書き手と同じモデルでは、そのモデルの癖を AI 臭さとして検出できない。
+- 戻さないこと: ai-review を Claude 系にしない。
+
+## D-05: lint は markdownlint と textlint の両方を実行する（2026-11）
+
+- 対象: `blog-writing.workflow.json` の lint / lint-fix の prompt
+- 決定: `npx markdownlint-cli2 blog_content/blog.md` と `npx textlint blog_content/blog.md` を実行し、エラー 0 まで直す。コマンドは `markdownlint-cli2`（takt 版の `markdownlint-cli` ではない）。
+- 理由: markdownlint だけを実行していた版では、最終出力に textlint のエラー（冗長表現、90 字超の文、助詞の重複）が 6 件残った。`package.json` の `lint` スクリプトも両方を実行する。
+- 戻さないこと: textlint を外さない。
+
+## D-06: CLI のコードブロックは各コマンドの直前に 1 行コメントを書く（2026-11）
+
+- 対象: `writing-style.md` の「コードブロック」節
+- 決定: bash のコードブロックでは、各コマンドの直前に「何をするコマンドか」を 1 行のコメントで書く。1 ブロックに複数コマンドがあれば、コマンドごとに付ける。アプリのソースなど、それ以外のコードのコメントは最小限のまま。
+- 理由: ユーザーが Cognito 記事の手直しで、全コマンドへの 1 行コメントを指示した。
+- 戻さないこと: 「コード内のコメントは最小限」の一般則で、CLI のコメントを削らない。
+
+## D-07: 前提知識・条件は 1〜2 行の箇条書きにする（2026-11）
+
+- 対象: `writing-style.md` の記事テンプレート、tech-review の prompt
+- 決定: 日付・リージョン・CLI バージョン程度を箇条書きで書く。使用ツールや IAM 権限を列挙しない。tech-review はこれらの追加を求めない。
+- 理由: tech-review の指摘で前提条件に jq・PyJWT・IAM 権限・プロファイルを足したところ、ユーザーが手直しで 2 行の箇条書きまで削った。
+- 戻さないこと: 再現性の名目で、前提条件の項目を増やすルールを足さない。
+
+## D-08: tech-review は本筋外の補足を求めず、未検証の話題は削除を提案する（2026-11）
+
+- 対象: tech-review の prompt
+- 決定: 記事の本筋に関係しない注意書き・補足の追加を求めない。記事が検証していない話題の記述が不正確なときは、正確に書き足すより削除を第一案にする。記述の誤りは blocking、補足の追加提案は non-blocking に分ける。
+- 理由: tech-review の指摘で、パスワードのカンマ制限、有効化前の sid の注意、API Gateway JWT オーソライザーの検証範囲などを足したところ、ユーザーが手直しですべて削除した。
+- 戻さないこと: 「網羅的に正確に」の方向で、補足追加を促す指示に戻さない。
+
+## D-09: 実行結果は出力も載せ、ID を省略しない（2026-11）
+
+- 対象: `blog-guidelines.md` の「やること」
+- 決定: 実行結果は文章だけでなく実際の出力を載せる。前後比較で一覧が変わるなら、変わった後の出力も載せる。ID は `tkn1...` のように省略しない。
+- 理由: ユーザーが手直しで、失効後のセッション一覧の出力を追加し、省略表記をすべて実際の ID に直した。
+
+## D-10: 伏せ字は IP・トークン・パスワード・アカウント ID などに限る（2026-11）
+
+- 対象: `blog-guidelines.md` の「機微情報の扱い」
+- 決定: 伏せるのは IP アドレス、トークン本体、パスワード、AWS アカウント ID、個人のメールアドレス。検証用リソースの ID（ユーザープール ID、クライアント ID、セッション ID、sub、jti など）は伏せない。かわりに公開前に検証用リソースを削除する。
+- 理由: ID まで伏せた版を、ユーザーが手直しで IP 以外すべて外した。
+- 戻さないこと: 安全側の名目で、リソース ID も伏せるルールにしない。
+
+## D-11: 環境準備の小さなトラブルは 1 行で済ませる（2026-11）
+
+- 対象: `blog-guidelines.md` の「やること」（ハマりポイントの項）
+- 決定: CLI が古くてコマンドがない等の環境準備のトラブルは、ハマりポイントとして節を立てず、前提条件に「事前に最新版へアップデートしておきます」程度の 1 行で書く。
+- 理由: 「ハマりポイントも正直に共有」の方針で CLI 更新を Step 0 として書いた版を、ユーザーが 1 行に縮めるよう指示した。
+
+## D-12: 著者の文体を AI 臭さとして指摘しない（2026-11）
+
+- 対象: ai-review の prompt、`anti-ai-smell.md` の「例外」節
+- 決定: 次は指摘しない。手順間の転換句（「次に〜してみます」「では、〜してみます」「ここから〜していきます」）、くだけた語尾（「〜かな？」「〜てますね」「〜みたいです」）、冒頭の「今回は以下のアップデートを紹介します。」、「Step N:」形式の見出し。
+- 理由: ai-review の指摘で転換句やくだけた表現を削った版に、ユーザーが手直しで同じ種類の表現を戻した。既存の Qiita 記事の冒頭も同じ型。
+- 戻さないこと: 一般的な AI 臭さの基準（「ご紹介します」は定型など）で、この例外を削らない。

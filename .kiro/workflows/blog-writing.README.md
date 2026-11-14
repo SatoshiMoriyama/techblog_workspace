@@ -1,5 +1,7 @@
 # blog-writing レシピ（takt からの移植）
 
+> このファイルを変更する前に `.kiro/workflows/blog-writing.decisions.md` を読むこと。記録された決定に反する変更（ルールの削除・元の形への巻き戻し）をしない。
+
 `.takt/workflows/blog-writing.yaml` を Kiro workflows のレシピ（カスタムエージェント + ワークフロー JSON）に移植したもの。既存の takt 定義は残したまま、新規に以下を追加した。
 
 - `.kiro/agents/`: カスタムエージェント5体（blog-planner / blog-writer / tech-reviewer / blog-editor / blog-polisher）
