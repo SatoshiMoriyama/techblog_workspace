@@ -15,13 +15,13 @@ Kiro の `run_workflow` にこのレシピを読み込ませる。`inputs` に `
 setup（実行ディレクトリ作成）
   → plan（企画確認・方針策定）
   → write（執筆、blog_content/blog.md に出力）
-  → lint（markdownlint）
+  → lint（markdownlint + textlint）
   → review-loop（repeat, maxIterations=3, onMaxIterations=pause）:
        reviewers（3並列: tech-review / writing-review / ai-review）
          → aggregate（3判定を集約して review.json に verdict を書く）
          → fix（指摘修正）
          → polish（yomiyasu 推敲）
-         → lint-fix（markdownlint 再実行）
+         → lint-fix（markdownlint + textlint 再実行）
      stopCondition: review.json の loopAction が "exit" になったらループ終了
 ```
 
@@ -107,7 +107,7 @@ takt は reviewers ステップの `rules` で `all("approved","すべて問題�
 
 - `write`: 出力先は `blog_content/blog.md`。入力資料の画像内容を読み取って反映。画像箇所に `<!-- TODO: screenshot - 説明 -->` マーカーを挿入。リンク埋め込み形式を投稿先（Qiita=URL単独行 / はてなブログ=`[URL:embed:cite]`）で切り替え。
 - `plan`: 投稿先プラットフォーム未指定ならユーザーに確認する（`send_message` severity=warning で pause）。
-- `lint` / `lint-fix`: markdownlint を実行しエラー0まで修正。`.markdownlint.json` に従う。takt の yaml は `npx markdownlint-cli` だったが、このプロジェクトの実際の依存は `markdownlint-cli2`（`package.json` の `lint` スクリプト）なので、コマンドを `markdownlint-cli2` に合わせた。
+- `lint` / `lint-fix`: markdownlint と textlint を実行しエラー0まで修正。`.markdownlint.json` と `.textlintrc.json` に従う（`package.json` の `lint` スクリプトと同じ組み合わせ。初版は markdownlint のみで、textlint のエラーが残ったまま完了したため追加）。takt の yaml は `npx markdownlint-cli` だったが、このプロジェクトの実際の依存は `markdownlint-cli2`（`package.json` の `lint` スクリプト）なので、コマンドを `markdownlint-cli2` に合わせた。
 
 ## 検証
 

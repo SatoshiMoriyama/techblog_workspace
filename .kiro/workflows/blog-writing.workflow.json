@@ -40,7 +40,7 @@
       "agent": "blog-writer",
       "modelId": "gpt-5.6-luna",
       "effortLevel": "low",
-      "prompt": "blog_content/blog.md に対して markdownlint を実行し、エラーがあれば修正してください。作業ディレクトリ: {{workdir}}。\n\n**手順:**\n1. `npx markdownlint-cli2 blog_content/blog.md` を実行（このプロジェクトは markdownlint-cli2 を使う。package.json の `lint` スクリプトも参照してよい）\n2. エラーがあれば記事を修正\n3. 再度 lint を実行してエラーが0になるまで繰り返す\n\n**注意:**\n- .markdownlint.json の設定に従うこと\n- lint修正で文章の意味を変えないこと"
+      "prompt": "blog_content/blog.md に対して markdownlint と textlint を実行し、エラーがあれば修正してください。作業ディレクトリ: {{workdir}}。\n\n**手順:**\n1. `npx markdownlint-cli2 blog_content/blog.md` と `npx textlint blog_content/blog.md` を実行（package.json の `lint` スクリプトと同じ組み合わせ。textlint の設定は .textlintrc.json）\n2. エラーがあれば記事を修正\n3. 再度 lint を実行してエラーが0になるまで繰り返す\n\n**注意:**\n- .markdownlint.json と .textlintrc.json の設定に従うこと\n- textlint の文長超過（sentence-length）は、文を分けて直す。コードブロック内やコマンド出力は対象外\n- lint修正で文章の意味を変えないこと"
     },
     {
       "type": "repeat",
@@ -66,7 +66,7 @@
               "agent": "tech-reviewer",
               "modelId": "gpt-5.6-terra",
               "effortLevel": "high",
-              "prompt": "blog_content/blog.md（作業ディレクトリ {{workdir}} 基準）の技術的な正確性をレビューしてください。\n\n**チェック項目:**\n- 技術的な記述が正確か（コマンド、設定値、API仕様など）\n- コード例が動作するか\n- 手順通りに進めて再現できるか\n- 最新バージョンの情報か（古い情報でないか）\n- 誤解を招く技術的表現がないか\n\nレビュー結果を {{setup.output}}/tech-review.md に書いてください。問題なければ本文冒頭に判定として `approved`、修正が必要なら `needs_fix` を明記すること。\n\n**既決事項（ユーザー判断済みの指摘）:**\nレビュー前に {{setup.output}}/decisions.json があれば読むこと（無ければ既決事項なし）。decision が `rejected`（却下）または `deferred`（見送り）の指摘は、記事の該当箇所が変わっていない限り再指摘せず、判定の根拠にも使わない。除外した指摘はレビューファイル末尾の「既決事項として除外」に1行ずつ列挙する。decisions.json は他レビュアーのファイルではないため ANTI-BIAS の対象外。\n\nANTI-BIAS: 他のレビュアーのファイル（writing-review.md, ai-review.md）は読まないこと。自分のファイルだけを書く。",
+              "prompt": "blog_content/blog.md（作業ディレクトリ {{workdir}} 基準）の技術的な正確性をレビューしてください。\n\n**チェック項目:**\n- 技術的な記述が正確か（コマンド、設定値、API仕様など）\n- コード例が動作するか\n- 手順通りに進めて再現できるか\n- 最新バージョンの情報か（古い情報でないか）\n- 誤解を招く技術的表現がないか\n\n**指摘の範囲:**\n- 記事の本筋（企画のテーマと検証内容）に関係しない注意書き・前提条件・補足の追加は求めない。前提知識・条件は日付・リージョン・CLI バージョン程度の簡潔なものでよく、使用ツールや IAM 権限の列挙を求めない\n- 記事が検証していない話題に触れていて記述が不正確な場合は、正確に書き足すより、その記述の削除を第一案として提案する\n- 記述の誤りは blocking、補足の追加提案は non-blocking として分ける\n\nレビュー結果を {{setup.output}}/tech-review.md に書いてください。問題なければ本文冒頭に判定として `approved`、修正が必要なら `needs_fix` を明記すること。\n\n**既決事項（ユーザー判断済みの指摘）:**\nレビュー前に {{setup.output}}/decisions.json があれば読むこと（無ければ既決事項なし）。decision が `rejected`（却下）または `deferred`（見送り）の指摘は、記事の該当箇所が変わっていない限り再指摘せず、判定の根拠にも使わない。除外した指摘はレビューファイル末尾の「既決事項として除外」に1行ずつ列挙する。decisions.json は他レビュアーのファイルではないため ANTI-BIAS の対象外。\n\nANTI-BIAS: 他のレビュアーのファイル（writing-review.md, ai-review.md）は読まないこと。自分のファイルだけを書く。",
               "artifacts": {
                 "tech_review": "{{setup.output}}/tech-review.md"
               }
@@ -88,7 +88,7 @@
               "agent": "blog-editor",
               "modelId": "gpt-5.6-terra",
               "effortLevel": "high",
-              "prompt": "ai-review の観点で、blog_content/blog.md（作業ディレクトリ {{workdir}} 基準）を「AI臭さ」の観点で専門的にレビューしてください。knowledge の anti-ai-smell.md の基準に従って判定してください。\n\n**チェック観点:**\n- AIが好む定型表現・言い回しが多用されていないか\n- 過剰な丁寧さや冗長な前置きがないか\n- 具体性に欠ける抽象的なまとめになっていないか\n- 箇条書きの羅列で終わっていないか\n- 筆者の実体験・感想・意見が感じられるか\n- 読み手に語りかける自然なトーンがあるか\n\n**重要:** この記事は Claude で執筆されています。あなた（GPT）は書き手とは別のモデルとして、Claude の癖を客観的に検出してください。\n\nレビュー結果を {{setup.output}}/ai-review.md に書いてください。AI臭さが気にならないレベルなら判定を `AI臭さなし`、修正が必要なら `AI臭さあり` とし、該当箇所と改善案を具体的に示すこと。本文冒頭に判定を明記する。\n\n**既決事項（ユーザー判断済みの指摘）:**\nレビュー前に {{setup.output}}/decisions.json があれば読むこと（無ければ既決事項なし）。decision が `rejected`（却下）または `deferred`（見送り）の指摘は、記事の該当箇所が変わっていない限り再指摘せず、判定の根拠にも使わない。除外した指摘はレビューファイル末尾の「既決事項として除外」に1行ずつ列挙する。decisions.json は他レビュアーのファイルではないため ANTI-BIAS の対象外。\n\nANTI-BIAS: 他のレビュアーのファイル（tech-review.md, writing-review.md）は読まないこと。自分のファイルだけを書く。",
+              "prompt": "ai-review の観点で、blog_content/blog.md（作業ディレクトリ {{workdir}} 基準）を「AI臭さ」の観点で専門的にレビューしてください。knowledge の anti-ai-smell.md の基準に従って判定してください。\n\n**チェック観点:**\n- AIが好む定型表現・言い回しが多用されていないか\n- 過剰な丁寧さや冗長な前置きがないか\n- 具体性に欠ける抽象的なまとめになっていないか\n- 箇条書きの羅列で終わっていないか\n- 筆者の実体験・感想・意見が感じられるか\n- 読み手に語りかける自然なトーンがあるか\n\n**指摘しないもの（著者の文体）:**\n- 「では」「次に」「ここから」「まずは」のような手順間の転換句。著者は手順記事で「次に〜してみます」「では、〜してみます」を使う（knowledge の writing-style の語りかけ参照）\n- 「〜かな？」「〜てますね」「〜みたいです」のようなくだけた語尾・口語表現\n- 冒頭の「今回は以下のアップデートを紹介します。」の型と、「Step N:」形式の手順見出し\n\n**重要:** この記事は Claude で執筆されています。あなた（GPT）は書き手とは別のモデルとして、Claude の癖を客観的に検出してください。\n\nレビュー結果を {{setup.output}}/ai-review.md に書いてください。AI臭さが気にならないレベルなら判定を `AI臭さなし`、修正が必要なら `AI臭さあり` とし、該当箇所と改善案を具体的に示すこと。本文冒頭に判定を明記する。\n\n**既決事項（ユーザー判断済みの指摘）:**\nレビュー前に {{setup.output}}/decisions.json があれば読むこと（無ければ既決事項なし）。decision が `rejected`（却下）または `deferred`（見送り）の指摘は、記事の該当箇所が変わっていない限り再指摘せず、判定の根拠にも使わない。除外した指摘はレビューファイル末尾の「既決事項として除外」に1行ずつ列挙する。decisions.json は他レビュアーのファイルではないため ANTI-BIAS の対象外。\n\nANTI-BIAS: 他のレビュアーのファイル（tech-review.md, writing-review.md）は読まないこと。自分のファイルだけを書く。",
               "artifacts": {
                 "ai_review": "{{setup.output}}/ai-review.md"
               }
@@ -129,7 +129,7 @@
           "agent": "blog-writer",
           "modelId": "gpt-5.6-luna",
           "effortLevel": "low",
-          "prompt": "blog_content/blog.md（作業ディレクトリ {{workdir}} 基準）に対して markdownlint を再実行し、エラーがあれば修正してください。{{setup.output}}/review.json の loopAction が `exit` の場合は何もせず「lint 不要（loopAction=exit のため）」とだけ報告してください。\n\n**手順:**\n1. `npx markdownlint-cli2 blog_content/blog.md` を実行（このプロジェクトは markdownlint-cli2 を使う。package.json の `lint` スクリプトも参照してよい）\n2. エラーがあれば記事を修正\n3. 再度 lint を実行してエラーが0になるまで繰り返す\n\n**注意:**\n- .markdownlint.json の設定に従うこと\n- lint修正で文章の意味を変えないこと\n- このステップの完了後、ループ先頭の reviewers に戻って再レビューされる"
+          "prompt": "blog_content/blog.md（作業ディレクトリ {{workdir}} 基準）に対して markdownlint と textlint を再実行し、エラーがあれば修正してください。{{setup.output}}/review.json の loopAction が `exit` の場合は何もせず「lint 不要（loopAction=exit のため）」とだけ報告してください。\n\n**手順:**\n1. `npx markdownlint-cli2 blog_content/blog.md` と `npx textlint blog_content/blog.md` を実行（package.json の `lint` スクリプトと同じ組み合わせ。textlint の設定は .textlintrc.json）\n2. エラーがあれば記事を修正\n3. 再度 lint を実行してエラーが0になるまで繰り返す\n\n**注意:**\n- .markdownlint.json と .textlintrc.json の設定に従うこと\n- textlint の文長超過（sentence-length）は、文を分けて直す。コードブロック内やコマンド出力は対象外\n- lint修正で文章の意味を変えないこと\n- このステップの完了後、ループ先頭の reviewers に戻って再レビューされる"
         }
       ]
     }
