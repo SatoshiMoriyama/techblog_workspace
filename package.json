@@ -11,7 +11,7 @@
     "cdk:deploy": "pnpm --filter cdk run deploy",
     "cdk:destroy": "pnpm --filter cdk run destroy",
     "setup-blog": "node scripts/setup-blog.js",
-    "git:reset": "git reset --hard HEAD && git clean -fd"
+    "git:reset": "git reset --hard HEAD && git clean -fdx"
   },
   "keywords": [],
   "author": "",
