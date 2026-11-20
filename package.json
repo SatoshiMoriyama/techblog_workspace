@@ -10,7 +10,8 @@
     "code:fix": "biome check --write packages/",
     "cdk:deploy": "pnpm --filter cdk run deploy",
     "cdk:destroy": "pnpm --filter cdk run destroy",
-    "setup-blog": "node scripts/setup-blog.js"
+    "setup-blog": "node scripts/setup-blog.js",
+    "git:reset": "git reset --hard HEAD && git clean -fd"
   },
   "keywords": [],
   "author": "",
