@@ -2,7 +2,10 @@
   "rules": {
     "preset-ja-technical-writing": {
       "sentence-length": {
-        "max": 90
+        "max": 90,
+        "skipPatterns": [
+          "/\\[https?:\\/\\/[^\\]]+:embed(:cite)?\\]/"
+        ]
       },
       "max-ten": {
         "max": 3
