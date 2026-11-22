@@ -29,7 +29,7 @@ setup（実行ディレクトリ作成）
 
 - `setup` は実行ごとに `<base>/.agents/blog-writing/<timestamp>/` を作る。レビュー成果物（各レビュー .md、`review.json`、`decisions.json`）をここに置く。
 - repeat の `stopCondition.fileCheck` は `review.json` の `loopAction == "exit"` を判定する。各周の末尾（lint-fix）まで回った後に再評価され、未達なら reviewers から次周へ。
-- `loopAction` は aggregate が書く。verdict が `APPROVED` なら `exit`、`CHANGES_REQUESTED` なら `continue`。ユーザーが「ループを終了する」と判断した場合は verdict を `CHANGES_REQUESTED` のまま残し、`loopAction` だけ `exit` にする。fix / polish / lint-fix は `loopAction == "exit"` なら何もしない。
+- `loopAction` は aggregate が書く。verdict が `APPROVED` なら `exit`、`CHANGES_REQUESTED` なら `continue`。ユーザーが「ループを終了する」と判断した場合は verdict を `CHANGES_REQUESTED` のまま残し、`loopAction` だけ `exit` にする。fix / polish / lint-fix は、verdict が `APPROVED`、または `loopAction == "exit"` で status=`open` の指摘が 0 件のときだけ何もしない。`open` が残る状態で `exit` になった場合（ユーザーが「対応して終了」と判断したとき）は、最後の周として一度だけ動いてからループを抜ける。
   - 背景: `update_workflow` の `update_status`（nodeId=review-loop）は maxIterations で止まったループにしか効かず、途中の周でループだけを抜けられなかった。aggregate を完了扱いにすると後続の fix から次周に進んでしまう。
 
 ### 既決事項の引き継ぎ（decisions.json）
