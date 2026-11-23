@@ -75,24 +75,24 @@ takt の profile→model と、step→profile の割当を、実行環境で選�
 
 | step | takt profile | Kiro step の modelId | effortLevel |
 | --- | --- | --- | --- |
-| setup | （takt になし） | gpt-5.6-luna | low |
+| setup | （takt になし） | claude-haiku-5.5 | low |
 | plan | opus | claude-opus-5.5 | high |
 | write | opus | claude-opus-5.5 | high |
-| lint | luna | gpt-5.6-luna | low |
+| lint | luna | claude-haiku-5.5（D-30） | low |
 | tech-review | terra | gpt-5.6-terra | high |
 | writing-review | sonnet | claude-sonnet-5.5 | medium |
 | ai-review | terra | gpt-5.6-terra | high |
 | aggregate | （集約。sonnet 系） | claude-sonnet-5.5 | medium |
-| fix | sonnet | claude-sonnet-5.5 | medium |
+| fix | sonnet | claude-opus-5.5（D-29） | medium |
 | polish | sonnet | claude-sonnet-5.5 | medium |
-| lint-fix | luna | gpt-5.6-luna | low |
+| lint-fix | luna | claude-haiku-5.5（D-30） | low |
 
 #### モデルID解決・代替の記録
 
-- `claude-opus-5.5` / `gpt-5.6-terra` / `gpt-5.6-luna` は実行環境の選択可能モデル一覧に存在し、takt の値と完全一致で解決した。
+- `claude-opus-5.5` / `gpt-5.6-terra` / `gpt-5.6-luna` は実行環境の選択可能モデル一覧に存在し、takt の値と完全一致で解決した。D-30 で setup / lint / lint-fix を `claude-haiku-5.5` に変更（ユーザー指定の ID）。
 - `claude-sonnet-5`（takt の sonnet profile）は実行環境の一覧に無かったため、生きている中量級 Claude の `claude-sonnet-5.5` に代替した。中量級 Claude という設計意図は保たれる。
-- `setup` と `aggregate` は takt の元ワークフローには無い補助ステップ。`setup` は実行ディレクトリ作成のみなので軽量な `gpt-5.6-luna`、`aggregate` は3レビューの集約判定なので中量級の `claude-sonnet-5.5` を割り当てた。
-- クロスモデルの設計意図を保持: 記事の執筆（plan / write）は Claude（opus）、AI臭さ検出（ai-review）は別モデルの GPT（terra）が客観的に行う。tech-review も GPT（terra）。writing-review / fix / polish は中量級 Claude。
+- `setup` と `aggregate` は takt の元ワークフローには無い補助ステップ。`setup` は実行ディレクトリ作成のみなので軽量モデル（当初 `gpt-5.6-luna`、D-30 で `claude-haiku-5.5`）、`aggregate` は3レビューの集約判定なので中量級の `claude-sonnet-5.5` を割り当てた。
+- クロスモデルの設計意図を保持: 記事の執筆（plan / write）は Claude（opus）、AI臭さ検出（ai-review）は別モデルの GPT（terra）が客観的に行う。tech-review も GPT（terra）。writing-review / polish は中量級 Claude。fix は D-29 で Opus。
 
 ### レビュー判定の集約（takt の rules → Kiro の parallel + aggregate + stopCondition）
 

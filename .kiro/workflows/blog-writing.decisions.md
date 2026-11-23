@@ -168,4 +168,9 @@
 - 決定: 本文を書く・直す blog-writer のステップ（write と fix）は `claude-opus-5.5`。setup / lint / lint-fix は機械的な作業なので軽量モデルのまま。
 - 理由: ユーザーが、ブログを書くライターは Opus 5.5 で書くよう指示した。fix が Sonnet だと、レビュー対応の修正で write と文体がずれる。
 - 戻さないこと: コスト削減を理由に fix を中量級に戻さない。D-04（ai-review と tech-review は GPT 系）は変えない。
+## D-30: 機械的なステップ（setup / lint / lint-fix）は Claude Haiku 5.5 にする（2026-11）
+- 対象: `blog-writing.workflow.json` の setup / lint / lint-fix の `modelId`
+- 決定: `gpt-5.6-luna` を `claude-haiku-5.5` に置き換える。effortLevel は low のまま。
+- 理由: ユーザーが、軽量モデルは Haiku 5.5 にするよう指示した。
+- 戻さないこと: D-04（ai-review と tech-review は GPT 系）は変えない。軽量ステップを GPT 系に戻すのはユーザー確認後。
 

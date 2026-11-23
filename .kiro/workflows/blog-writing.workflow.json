@@ -10,7 +10,7 @@
       "type": "step",
       "id": "setup",
       "agent": "blog-writer",
-      "modelId": "gpt-5.6-luna",
+      "modelId": "claude-haiku-5.5",
       "effortLevel": "low",
       "captureOutput": true,
       "prompt": "blog-writing 実行のセットアップステップです。次の作業だけを行い、それ以外は何もしないこと:\n1. ベースディレクトリを決める: {{workdir}} が空でない絶対パスならそれを使う。空なら現在のワークスペースルート（絶対パス）を使う。\n2. 実行タイムスタンプ文字列を YYYY-MM-DD_HH-MM-SS 形式で生成する（例: `date +%Y-%m-%d_%H-%M-%S`）。\n3. `mkdir -p` で <base>/.agents/blog-writing/<timestamp>/ を作成する。\n最終応答は、作成した絶対ディレクトリパスだけを返すこと。前後に説明・引用符・バッククォート・末尾スラッシュ・句読点・改行後のコメントを一切付けない。後続ステップがこの文字列をそのまま実行ディレクトリとして使う。"
@@ -38,7 +38,7 @@
       "type": "step",
       "id": "lint",
       "agent": "blog-writer",
-      "modelId": "gpt-5.6-luna",
+      "modelId": "claude-haiku-5.5",
       "effortLevel": "low",
       "prompt": "blog_content/blog.md に対して markdownlint と textlint を実行し、エラーがあれば修正してください。作業ディレクトリ: {{workdir}}。\n\n**手順:**\n1. `npx markdownlint-cli2 blog_content/blog.md` と `npx textlint blog_content/blog.md` を実行（package.json の `lint` スクリプトと同じ組み合わせ。textlint の設定は .textlintrc.json）\n2. エラーがあれば記事を修正\n3. 再度 lint を実行してエラーが0になるまで繰り返す\n\n**注意:**\n- .markdownlint.json と .textlintrc.json の設定に従うこと\n- textlint の文長超過（sentence-length）は、文を分けて直す。コードブロック内やコマンド出力は対象外\n- はてなブログの単独行 `[URL:embed:cite]` は textlint の sentence-length に URL の長さで検出される。これは既知の誤検出なので、通常の Markdown リンクに書き換えたり文を変えたりせず、残したまま完了してよい（完了報告に件数を書く）\n- {{setup.output}}/decisions.json があれば読み、accepted の修正（リンク形式・文体など）を lint 修正で元に戻さない\n- lint修正で文章の意味を変えないこと"
     },
@@ -127,7 +127,7 @@
           "type": "step",
           "id": "lint-fix",
           "agent": "blog-writer",
-          "modelId": "gpt-5.6-luna",
+          "modelId": "claude-haiku-5.5",
           "effortLevel": "low",
           "prompt": "blog_content/blog.md（作業ディレクトリ {{workdir}} 基準）に対して markdownlint と textlint を再実行し、エラーがあれば修正してください。{{setup.output}}/review.json の verdict が `APPROVED`、または loopAction が `exit` で status=`open` の指摘が 0 件の場合は何もせず「lint 不要（対応する指摘なし）」とだけ報告してください。それ以外（最後の周の修正後を含む）は lint を実行してください。\n\n**手順:**\n1. `npx markdownlint-cli2 blog_content/blog.md` と `npx textlint blog_content/blog.md` を実行（package.json の `lint` スクリプトと同じ組み合わせ。textlint の設定は .textlintrc.json）\n2. エラーがあれば記事を修正\n3. 再度 lint を実行してエラーが0になるまで繰り返す\n\n**注意:**\n- .markdownlint.json と .textlintrc.json の設定に従うこと\n- textlint の文長超過（sentence-length）は、文を分けて直す。コードブロック内やコマンド出力は対象外\n- はてなブログの単独行 `[URL:embed:cite]` は textlint の sentence-length に URL の長さで検出される。これは既知の誤検出なので、通常の Markdown リンクに書き換えたり文を変えたりせず、残したまま完了してよい（完了報告に件数を書く）\n- {{setup.output}}/decisions.json があれば読み、accepted の修正（リンク形式・文体など）を lint 修正で元に戻さない\n- lint修正で文章の意味を変えないこと\n- このステップの完了後、ループ先頭の reviewers に戻って再レビューされる"
         }
